@@ -3,6 +3,7 @@ import config from './config';
 import type { ObsidianNoteDuplicatorSettings } from './types';
 import type { TransformResult } from './transformers';
 import { ObsidianNoteDuplicatorSettingsTab, DEFAULT_SETTINGS } from './settings';
+import { generateNewDocumentPath } from './pathUtils';
 
 export default class ObsidianNoteDuplicatorPlugin extends Plugin {
     settings: ObsidianNoteDuplicatorSettings;
@@ -55,7 +56,7 @@ export default class ObsidianNoteDuplicatorPlugin extends Plugin {
         if (result.status === 'SUCCESS') {
             const transformedTitle = result.transformedTitle;
             const extension = this.getFileExtension(file.path);
-            const newPath = this.generateNewDocumentPath(transformedTitle, extension, file.parent?.path);
+            const newPath = generateNewDocumentPath(transformedTitle, extension, file.parent?.path);
             try {
                 const copiedFile = await this.app.vault.copy(file, newPath);
                 if (copiedFile instanceof TFile) {
@@ -74,10 +75,6 @@ export default class ObsidianNoteDuplicatorPlugin extends Plugin {
 
     private getFileExtension(filePath: string, defaultExtension: string = "md") {
         return this.app.vault.getFileByPath(filePath)?.extension || defaultExtension;
-    }
-
-    private generateNewDocumentPath(title: string, extension: string, directoryPath: string = "") {
-        return directoryPath + title + "." + extension;
     }
 
     async loadSettings() {
