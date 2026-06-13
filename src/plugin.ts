@@ -1,18 +1,89 @@
-import { Notice, Plugin, TAbstractFile, TFile } from 'obsidian';
+import { Notice, Plugin, TAbstractFile, TFile, debounce } from 'obsidian';
 import config from './config';
 import type { ObsidianNoteDuplicatorSettings } from './types';
 import type { TransformResult } from './transformers';
 import { ObsidianNoteDuplicatorSettingsTab, DEFAULT_SETTINGS } from './settings';
 import { generateNewDocumentPath } from './pathUtils';
+import {
+    RelatedNotesService,
+    RelatedNotesModal,
+    RelatedNotesView,
+    RELATED_NOTES_VIEW_TYPE,
+    buildNoteDoc,
+    collectCandidates,
+} from './related';
 
 export default class ObsidianNoteDuplicatorPlugin extends Plugin {
     settings: ObsidianNoteDuplicatorSettings;
     private registeredEvents: Array<() => void> = [];
+    relatedNotesService: RelatedNotesService;
 
     async onload() {
         await this.loadSettings();
+        this.relatedNotesService = new RelatedNotesService(this.app, () => this.settings, buildNoteDoc, collectCandidates);
         this.addSettingTab(new ObsidianNoteDuplicatorSettingsTab(this.app, this));
         this.registerTransformers();
+        this.registerRelatedNotes();
+    }
+
+    private registerRelatedNotes() {
+        this.registerView(
+            RELATED_NOTES_VIEW_TYPE,
+            leaf => new RelatedNotesView(leaf, this.relatedNotesService)
+        );
+
+        this.addRibbonIcon('link', 'Show related notes', () => this.revealRelatedNotesView());
+
+        this.addCommand({
+            id: 'show-related-notes',
+            name: 'Show related notes',
+            callback: async () => {
+                const file = this.app.workspace.getActiveFile();
+                if (!file) {
+                    new Notice('No active file to find related notes for.');
+                    return;
+                }
+                try {
+                    const results = await this.relatedNotesService.findRelated(file);
+                    new RelatedNotesModal(this.app, results).open();
+                } catch (error) {
+                    new Notice(`Failed to find related notes: ${error}`);
+                }
+            }
+        });
+
+        this.addCommand({
+            id: 'open-related-notes-view',
+            name: 'Open related notes sidebar',
+            callback: () => this.revealRelatedNotesView()
+        });
+
+        const refresh = debounce(() => this.refreshRelatedNotesViews(), 400);
+        this.registerEvent(this.app.workspace.on('active-leaf-change', refresh));
+        this.registerEvent(this.app.workspace.on('file-open', refresh));
+    }
+
+    private async revealRelatedNotesView() {
+        const { workspace } = this.app;
+        let leaf = workspace.getLeavesOfType(RELATED_NOTES_VIEW_TYPE)[0];
+        if (!leaf) {
+            const rightLeaf = workspace.getRightLeaf(false);
+            if (!rightLeaf) {
+                return;
+            }
+            leaf = rightLeaf;
+            await leaf.setViewState({ type: RELATED_NOTES_VIEW_TYPE, active: true });
+        }
+        await workspace.revealLeaf(leaf);
+    }
+
+    private refreshRelatedNotesViews() {
+        for (const leaf of this.app.workspace.getLeavesOfType(RELATED_NOTES_VIEW_TYPE)) {
+            const view = leaf.view;
+            if (view instanceof RelatedNotesView) {
+                void view.refresh();
+            }
+        }
     }
 
     private registerTransformers() {
