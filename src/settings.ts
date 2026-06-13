@@ -5,7 +5,11 @@ import { containsUnsafeFileNameCharacters, MAX_SEPARATOR_LENGTH, UNSAFE_FILE_NAM
 
 export const DEFAULT_SETTINGS: ObsidianNoteDuplicatorSettings = {
     regexSetting: '/.*/gm',
-    indexSeparator: '-'
+    indexSeparator: '-',
+    relatedNotesLimit: 5,
+    weightWords: 1,
+    weightTags: 0.5,
+    weightLinks: 0.5,
 };
 
 export class ObsidianNoteDuplicatorSettingsTab extends PluginSettingTab {
