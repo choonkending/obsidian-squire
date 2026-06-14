@@ -90,7 +90,7 @@ Adds a new sub-level number after the last decimal at the end of the note's inde
 
 *Tune Squire to match your workflow without breaking your stride.*
 
-**Index separator** — the character(s) between your index number and title (e.g. `-` in `1 - Biology.md`). Must be safe for file names, max 3 characters.
+**Index separator** — the character(s) between your index number and title (e.g. `-` in `1 - Biology.md`). Must be safe for file names, max 5 characters.
 
 **Number of suggestions** — how many related notes to return (1–50, default 5).
 

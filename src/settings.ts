@@ -1,12 +1,11 @@
 import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
-import type ObsidianNoteDuplicatorPlugin from './plugin';
-import type { ObsidianNoteDuplicatorSettings } from './types';
+import type SquirePlugin from './plugin';
+import type { SquireSettings } from './types';
 import { containsUnsafeFileNameCharacters, MAX_SEPARATOR_LENGTH, UNSAFE_FILE_NAME_CHARACTERS } from './fileUtils';
 import { DEFAULT_WEIGHTS } from './related';
 import { DEFAULT_RESULT_LIMIT, normalizeResultLimit, normalizeWeight } from './related/settingsUtils';
 
-export const DEFAULT_SETTINGS: ObsidianNoteDuplicatorSettings = {
-    regexSetting: '/.*/gm',
+export const DEFAULT_SETTINGS: SquireSettings = {
     indexSeparator: '-',
     relatedNotesLimit: 5,
     weightWords: 1,
@@ -14,10 +13,10 @@ export const DEFAULT_SETTINGS: ObsidianNoteDuplicatorSettings = {
     weightLinks: 0.5,
 };
 
-export class ObsidianNoteDuplicatorSettingsTab extends PluginSettingTab {
-    plugin: ObsidianNoteDuplicatorPlugin;
+export class SquireSettingsTab extends PluginSettingTab {
+    plugin: SquirePlugin;
 
-    constructor(app: App, plugin: ObsidianNoteDuplicatorPlugin) {
+    constructor(app: App, plugin: SquirePlugin) {
         super(app, plugin);
         this.plugin = plugin;
     }
@@ -27,7 +26,7 @@ export class ObsidianNoteDuplicatorSettingsTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        new Setting(containerEl).setName("Title").setHeading();
+        new Setting(containerEl).setName("Index numbering").setHeading();
 
         new Setting(containerEl)
             .setName("Index separator")
@@ -65,7 +64,7 @@ export class ObsidianNoteDuplicatorSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Word match weight")
-            .setDesc("Weight for title/body word overlap (0 = disabled).")
+            .setDesc("How strongly word similarity affects results. Higher values favour notes with similar vocabulary. (Default: 1.0)")
             .addText(text => text
                 .setPlaceholder(String(DEFAULT_WEIGHTS.words))
                 .setValue(String(this.plugin.settings.weightWords))
@@ -76,7 +75,7 @@ export class ObsidianNoteDuplicatorSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Tag match weight")
-            .setDesc("Weight for shared tags (0 = disabled).")
+            .setDesc("How strongly shared tags affect results. Higher values favour notes with the same topic labels. (Default: 0.5)")
             .addText(text => text
                 .setPlaceholder(String(DEFAULT_WEIGHTS.tags))
                 .setValue(String(this.plugin.settings.weightTags))
@@ -87,7 +86,7 @@ export class ObsidianNoteDuplicatorSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Link match weight")
-            .setDesc("Weight for shared outgoing links (0 = disabled).")
+            .setDesc("How strongly shared outgoing links affect results. Higher values favour notes linking to the same pages. (Default: 0.5)")
             .addText(text => text
                 .setPlaceholder(String(DEFAULT_WEIGHTS.links))
                 .setValue(String(this.plugin.settings.weightLinks))

@@ -1,5 +1,5 @@
 import { App, TFile } from "obsidian";
-import type { ObsidianNoteDuplicatorSettings } from "../types";
+import type { SquireSettings } from "../types";
 import LexicalEngine from "./LexicalEngine";
 import { buildNoteDoc, collectCandidates } from "./vault";
 import type { NoteDoc } from "./types";
@@ -10,7 +10,7 @@ export class RelatedNotesService {
 
     constructor(
         private readonly app: App,
-        private readonly getSettings: () => ObsidianNoteDuplicatorSettings,
+        private readonly getSettings: () => SquireSettings,
         private readonly buildNoteDoc: (app: App, file: TFile) => Promise<NoteDoc>,
         private readonly collectCandidates: (app: App, exclude?: TFile) => Promise<NoteDoc[]>
     ) {}

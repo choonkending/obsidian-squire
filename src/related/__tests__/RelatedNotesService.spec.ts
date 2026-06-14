@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
 import { termFrequencies } from "../text";
 import type { NoteDoc } from "../types";
-import type { ObsidianNoteDuplicatorSettings } from "../../types";
+import type { SquireSettings } from "../../types";
 import { RelatedNotesService } from "../RelatedNotesService";
 
 const fakeBuildNoteDoc = jest.fn();
@@ -21,10 +21,9 @@ function makeDoc(
 }
 
 function makeSettings(
-    overrides: Partial<ObsidianNoteDuplicatorSettings> = {}
-): ObsidianNoteDuplicatorSettings {
+    overrides: Partial<SquireSettings> = {}
+): SquireSettings {
     return {
-        regexSetting: "",
         indexSeparator: "",
         relatedNotesLimit: 5,
         weightWords: 1,

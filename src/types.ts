@@ -1,5 +1,4 @@
-export interface ObsidianNoteDuplicatorSettings {
-    regexSetting: string;
+export interface SquireSettings {
     indexSeparator: string;
     relatedNotesLimit: number;
     weightWords: number;

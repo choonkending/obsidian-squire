@@ -1,8 +1,8 @@
 import { Notice, Plugin, TAbstractFile, TFile, debounce } from 'obsidian';
 import config from './config';
-import type { ObsidianNoteDuplicatorSettings } from './types';
+import type { SquireSettings } from './types';
 import type { TransformResult } from './transformers';
-import { ObsidianNoteDuplicatorSettingsTab, DEFAULT_SETTINGS } from './settings';
+import { SquireSettingsTab, DEFAULT_SETTINGS } from './settings';
 import { generateNewDocumentPath } from './pathUtils';
 import {
     RelatedNotesService,
@@ -13,15 +13,15 @@ import {
     collectCandidates,
 } from './related';
 
-export default class ObsidianNoteDuplicatorPlugin extends Plugin {
-    settings: ObsidianNoteDuplicatorSettings;
+export default class SquirePlugin extends Plugin {
+    settings: SquireSettings;
     private registeredEvents: Array<() => void> = [];
     relatedNotesService: RelatedNotesService;
 
     async onload() {
         await this.loadSettings();
         this.relatedNotesService = new RelatedNotesService(this.app, () => this.settings, buildNoteDoc, collectCandidates);
-        this.addSettingTab(new ObsidianNoteDuplicatorSettingsTab(this.app, this));
+        this.addSettingTab(new SquireSettingsTab(this.app, this));
         this.registerTransformers();
         this.registerRelatedNotes();
     }
@@ -149,7 +149,7 @@ export default class ObsidianNoteDuplicatorPlugin extends Plugin {
     }
 
     async loadSettings() {
-        const loaded = (await this.loadData()) as Partial<ObsidianNoteDuplicatorSettings> | null;
+        const loaded = (await this.loadData()) as Partial<SquireSettings> | null;
         this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded ?? {});
     }
 
