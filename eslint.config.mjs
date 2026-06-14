@@ -18,6 +18,8 @@ export default defineConfig([
     files: ['**/*.spec.ts'],
     plugins: { jest: pluginJest },
     languageOptions: {
+      parser: tsparser,
+      parserOptions: { project: "./tsconfig.json" },
       globals: pluginJest.environments.globals.globals,
     },
     rules: {

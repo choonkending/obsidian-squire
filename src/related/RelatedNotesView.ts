@@ -1,0 +1,115 @@
+import { ItemView, MarkdownView, Notice, TFile, WorkspaceLeaf } from "obsidian";
+import { RelatedNotesService } from "./RelatedNotesService";
+
+export const RELATED_NOTES_VIEW_TYPE = "squire-related-notes";
+
+export class RelatedNotesView extends ItemView {
+    constructor(
+        leaf: WorkspaceLeaf,
+        private readonly service: RelatedNotesService
+    ) {
+        super(leaf);
+    }
+
+    getViewType(): string {
+        return RELATED_NOTES_VIEW_TYPE;
+    }
+
+    getDisplayText(): string {
+        return "Related notes";
+    }
+
+    getIcon(): string {
+        return "link";
+    }
+
+    async onOpen(): Promise<void> {
+        await this.refresh();
+    }
+
+    async refresh(): Promise<void> {
+        const container = this.containerEl.children[1];
+        container.empty();
+        container.addClass("squire-related-view");
+
+        const file = this.app.workspace.getActiveFile();
+        if (!file) {
+            container.createEl("p", {
+                text: "Open a note to see related notes.",
+                cls: "squire-related-empty",
+            });
+            return;
+        }
+
+        const results = await this.service.findRelated(file);
+        if (results.length === 0) {
+            container.createEl("p", {
+                text: "No related notes found.",
+                cls: "squire-related-empty",
+            });
+            return;
+        }
+
+        const list = container.createEl("div", { cls: "squire-related-list" });
+        for (const result of results) {
+            const item = list.createEl("div", { cls: "squire-related-item" });
+
+            item.createEl("div", {
+                text: result.title,
+                cls: "squire-related-title",
+            });
+
+            const meta = item.createEl("div", { cls: "squire-related-meta" });
+            meta.createEl("span", {
+                text: `${Math.round(result.score * 100)}% match`,
+                cls: "squire-related-score",
+            });
+
+            const linkBtn = meta.createEl("button", {
+                cls: "squire-link-btn",
+                attr: { "aria-label": `Insert link to ${result.title}` },
+                text: "Link",
+            });
+
+            item.addEventListener("click", (e: MouseEvent) => {
+                if (e.button !== 0) return;
+                const target = this.app.vault.getFileByPath(result.path);
+                if (target instanceof TFile) {
+                    void this.app.workspace.getLeaf().openFile(target);
+                }
+            });
+
+            linkBtn.onClickEvent((e: MouseEvent) => {
+                e.stopPropagation();
+                this.insertLink(result.title);
+            });
+
+            item.addEventListener("contextmenu", (e: MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.insertLink(result.title);
+            });
+
+            item.addEventListener("auxclick", (e: MouseEvent) => {
+                if (e.button === 1) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.insertLink(result.title);
+                }
+            });
+        }
+    }
+
+    private insertLink(title: string): void {
+        const leaves = this.app.workspace.getLeavesOfType("markdown");
+        const leaf = leaves[0];
+
+        if (!leaf || !(leaf.view instanceof MarkdownView)) {
+            new Notice("No editor open to insert link into.");
+            return;
+        }
+
+        leaf.view.editor.replaceSelection(`[[${title}]]\n`);
+        new Notice(`Inserted link to ${title}`);
+    }
+}

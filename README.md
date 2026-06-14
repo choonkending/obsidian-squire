@@ -7,6 +7,7 @@
 ### ✨ Features
 - **Smart Duplication:** Right-click menus and command palette options to seamlessly duplicate your current note.
 - **Title Transformers:** Automatically generate the new note's prefix (e.g., incrementing or nesting numbers) while leaving the title blank for you to instantly type the new subject.
+- **Related Notes:** Automatically surface connected notes via word, tag, and link similarity — no manual searching required.
 
 **Demo:** https://github.com/user-attachments/assets/49f91986-7b20-4a31-848e-2bd6bd77bf3a
 
@@ -29,7 +30,6 @@ Imagine you use a simple numeric index for your notes:
 If you want to create a new, unrelated note (e.g., Physics), you need to increment the number:
 
 ```text
-Plaintext
 📂 Literature_Notes
  ├── 📄 1 - Biology.md
  └── 📄 2 - Physics.md
@@ -44,6 +44,9 @@ If you want to create a child note related to Biology (e.g., Anatomy), you need 
 ```
 
 ## 🛠️ Title Transformers
+
+*No mental arithmetic. No manual formatting. Just pick the command and type your subject.*
+
 Transformers dictate how the new note's name is generated. (Note: The transformers intentionally leave the text after the number blank so you can immediately type your new topic).
 
 > [!TIP]
@@ -61,22 +64,45 @@ Adds a new sub-level number after the last decimal at the end of the note's inde
 - `1 - Biology.md` → `1.1 - .md`
 - `1.1 - Anatomy.md` → `1.1.1 - .md`
 
-## 🚀 Usage
-1. Trigger the Duplication: - Right-click a note in the File Explorer and select your desired duplication mode.
-  - OR open the Command Palette (`Ctrl/Cmd + P`) and run the Squire duplication command.
-2. Rename & Write: The new note will appear in the exact same folder with the correctly incremented prefix. Just type your new title and start writing!
+## 🔗 Related Notes
 
-Customizing Content Extraction
-Don't want to copy the entire text of the previous note?
+*Manually hunting for connections between notes interrupts your thinking. Squire automatically surfaces related notes using lexical scoring — no tagging tax, no manual cross-referencing.*
 
+**Sidebar view:** Opens a persistent panel that auto-refreshes as you switch notes. Click a result to open it; click **Link** to insert `[[Title]]` at your cursor.
 
-📦 Installation
+**Quick modal:** `Ctrl/Cmd+P` → **Show related notes** for a one-off look without changing your layout. Filter by typing.
 
-1. Find squire in [https://community.obsidian.md/plugins/squire](https://community.obsidian.md/plugins/squire)
+**Ribbon icon:** The link icon toggles the sidebar view.
+
+## 🚀 Index Numbering
+
+*Right-click a note in the File Explorer and select your desired mode:*
+- **Duplicate: Increment Last Number** — raises the trailing number by 1
+- **Duplicate: Nest Last Number** — adds a new sub-level after the last decimal
+
+*Or open the Command Palette (`Ctrl/Cmd+P`) and run the same commands. The new note appears in the same folder with the correctly computed prefix. Type your subject and keep writing.*
+
+**Related notes:**
+1. Click the link icon in the ribbon, or run **Open related notes sidebar** from the Command Palette.
+2. Switch between notes — the sidebar updates automatically.
+
+## ⚙️ Settings
+
+*Tune Squire to match your workflow without breaking your stride.*
+
+**Index separator** — the character(s) between your index number and title (e.g. `-` in `1 - Biology.md`). Must be safe for file names, max 5 characters.
+
+**Number of suggestions** — how many related notes to return (1–50, default 5).
+
+**Match weights** — control how much word overlap, shared tags, and shared outgoing links influence similarity. Defaults: Words `1.0`, Tags `0.5`, Links `0.5`. Set to `0` to disable a signal.
+
+## 📦 Installation
+
+1. Find Squire in [Obsidian Community Plugins](https://community.obsidian.md/plugins/squire)
 2. Select "Add to Obsidian"
 
+## 🤝 Contributing & Support
 
-🤝 Contributing & Support
 I accept Pull Requests, GitHub Issues, and general feedback! If you have a specific use case or transformer idea, please look at contributing to help make Squire better for everyone.
 
 Funding: If you find this plugin useful and it saves you time, just let me know—hearing how it helps your workflow is greatly appreciated!
