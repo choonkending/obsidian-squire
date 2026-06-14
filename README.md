@@ -2,22 +2,21 @@
 
 [![Release Obsidian plugin](https://github.com/choonkending/obsidian-squire/actions/workflows/release.yml/badge.svg)](https://github.com/choonkending/obsidian-squire/actions/workflows/release.yml) ![GitHub Release](https://img.shields.io/github/v/release/choonkending/obsidian-squire)
 
-**Your faithful note-taking companion.** Squire automatically handles incremental file naming and note duplication so you can stay in your flow state. By applying preset rules to duplicate and rename your current notes, Squire removes the friction of manual formatting while strictly adhering to your established note-taking identification system.
+**Your faithful note-taking companion.** Squire automates index numbering and surfaces related notes so you can stay in your flow state. No manual calculation, no hunting for connections.
 
 ### ✨ Features
-- **Smart Duplication:** Right-click menus and command palette options to seamlessly duplicate your current note.
-- **Title Transformers:** Automatically generate the new note's prefix (e.g., incrementing or nesting numbers) while leaving the title blank for you to instantly type the new subject.
+- **Smart Index Numbering:** Automatically generate the new note's prefix (incrementing or nesting numbers) while leaving the title blank for you to instantly type the new subject. Right-click or command palette to duplicate.
 - **Related Notes:** Automatically surface connected notes via word, tag, and link similarity — no manual searching required.
-
-**Demo:** https://github.com/user-attachments/assets/49f91986-7b20-4a31-848e-2bd6bd77bf3a
 
 ---
 
 ## 🎯 Why Squire? (The Problem)
 
-If you use a structural note-taking framework like the [Zettelkasten Method](https://www.atlassian.com/blog/productivity/zettelkasten-method), you likely rely on a strict naming or numbering convention. 
+Every action that breaks your typing flow — calculating the next index number, manually hunting for related notes — adds micro-friction that pulls you out of deep work.
 
-As your vault grows, manually copying, pasting, and calculating the next index number for a new note becomes tedious and *gets in the way of your actual thinking.* Squire automates this.
+If you use a structural note-taking framework like the [Zettelkasten Method](https://www.atlassian.com/blog/productivity/zettelkasten-method), you likely rely on a strict naming or numbering convention. As your vault grows, manually copying, pasting, and calculating the next index number becomes tedious.
+
+Squire removes this friction on two fronts: it automates index numbering so you never do mental arithmetic, and it surfaces related notes so you never hunt for connections.
 
 ### Example Workflow
 Imagine you use a simple numeric index for your notes:
@@ -43,9 +42,11 @@ If you want to create a child note related to Biology (e.g., Anatomy), you need 
  └── 📄 1.1 - Anatomy.md
 ```
 
-## 🛠️ Title Transformers
+## 🚀 Smart Index Numbering
 
 *No mental arithmetic. No manual formatting. Just pick the command and type your subject.*
+
+Right-click a note in the File Explorer and select **Duplicate: Increment Last Number** or **Duplicate: Nest Last Number**, or open the Command Palette (`Ctrl/Cmd+P`) and run the same commands. The new note appears in the same folder with the correctly computed prefix.
 
 Transformers dictate how the new note's name is generated. (Note: The transformers intentionally leave the text after the number blank so you can immediately type your new topic).
 
@@ -73,18 +74,6 @@ Adds a new sub-level number after the last decimal at the end of the note's inde
 **Quick modal:** `Ctrl/Cmd+P` → **Show related notes** for a one-off look without changing your layout. Filter by typing.
 
 **Ribbon icon:** The link icon toggles the sidebar view.
-
-## 🚀 Index Numbering
-
-*Right-click a note in the File Explorer and select your desired mode:*
-- **Duplicate: Increment Last Number** — raises the trailing number by 1
-- **Duplicate: Nest Last Number** — adds a new sub-level after the last decimal
-
-*Or open the Command Palette (`Ctrl/Cmd+P`) and run the same commands. The new note appears in the same folder with the correctly computed prefix. Type your subject and keep writing.*
-
-**Related notes:**
-1. Click the link icon in the ribbon, or run **Open related notes sidebar** from the Command Palette.
-2. Switch between notes — the sidebar updates automatically.
 
 ## ⚙️ Settings
 
