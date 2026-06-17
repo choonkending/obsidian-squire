@@ -1,5 +1,12 @@
 # Obsidian community plugin
 
+## Agent preferences
+
+- **Commit style**: conventional commits (`feat:`, `fix:`, `chore:`, `refactor:`, `docs:`). Each commit is an atomic, compilable unit.
+- **Code style**: no comments in source. Lean files (<200 lines). TypeScript strict mode.
+- **Testing**: run `npm test` (jest) after every change; all tests must pass before commit.
+- **Build verification**: run `npm run build` (tsc + esbuild) before committing; fix lint errors (`npm run lint`) in your own changes.
+
 ## Project overview
 
 - Target: Obsidian Community Plugin (TypeScript → bundled JavaScript).
