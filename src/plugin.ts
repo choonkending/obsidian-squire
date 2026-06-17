@@ -24,15 +24,23 @@ export default class SquirePlugin extends Plugin {
         this.addSettingTab(new SquireSettingsTab(this.app, this));
         this.registerTransformers();
         this.registerRelatedNotes();
+        if (this.settings.showRelatedNotesSidebar) {
+            void this.openRelatedNotesLeaf();
+        }
     }
 
     private registerRelatedNotes() {
         this.registerView(
             RELATED_NOTES_VIEW_TYPE,
-            leaf => new RelatedNotesView(leaf, this.relatedNotesService)
+            leaf => new RelatedNotesView(leaf, this.relatedNotesService, () => {
+                this.settings.showRelatedNotesSidebar = false;
+                void this.saveSettings();
+            })
         );
 
-        this.addRibbonIcon('link', 'Show related notes', () => this.revealRelatedNotesView());
+        this.addRibbonIcon('network', 'Toggle related notes sidebar', () =>
+            this.toggleRelatedNotesView()
+        );
 
         this.addCommand({
             id: 'show-related-notes',
@@ -53,9 +61,9 @@ export default class SquirePlugin extends Plugin {
         });
 
         this.addCommand({
-            id: 'open-related-notes-view',
-            name: 'Open related notes sidebar',
-            callback: () => this.revealRelatedNotesView()
+            id: 'toggle-related-notes-view',
+            name: 'Toggle related notes sidebar',
+            callback: () => this.toggleRelatedNotesView()
         });
 
         const refresh = debounce(() => this.refreshRelatedNotesViews(), 400);
@@ -63,18 +71,22 @@ export default class SquirePlugin extends Plugin {
         this.registerEvent(this.app.workspace.on('file-open', refresh));
     }
 
-    private async revealRelatedNotesView() {
-        const { workspace } = this.app;
-        let leaf = workspace.getLeavesOfType(RELATED_NOTES_VIEW_TYPE)[0];
-        if (!leaf) {
-            const rightLeaf = workspace.getRightLeaf(false);
-            if (!rightLeaf) {
-                return;
-            }
-            leaf = rightLeaf;
-            await leaf.setViewState({ type: RELATED_NOTES_VIEW_TYPE, active: true });
+    private async openRelatedNotesLeaf(): Promise<void> {
+        const rightLeaf = this.app.workspace.getRightLeaf(false);
+        if (!rightLeaf) return;
+        await rightLeaf.setViewState({ type: RELATED_NOTES_VIEW_TYPE, active: true });
+        await this.app.workspace.revealLeaf(rightLeaf);
+    }
+
+    private async toggleRelatedNotesView() {
+        const existing = this.app.workspace.getLeavesOfType(RELATED_NOTES_VIEW_TYPE)[0];
+        if (existing) {
+            existing.detach();
+            return;
         }
-        await workspace.revealLeaf(leaf);
+        this.settings.showRelatedNotesSidebar = true;
+        await this.saveSettings();
+        await this.openRelatedNotesLeaf();
     }
 
     private refreshRelatedNotesViews() {

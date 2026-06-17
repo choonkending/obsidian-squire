@@ -1,6 +1,12 @@
 import { App, SuggestModal, TFile } from "obsidian";
 import type { RelatedResult } from "./types";
 
+function scoreClass(score: number): string {
+    if (score >= 0.7) return "squire-related-score-high";
+    if (score >= 0.4) return "squire-related-score-medium";
+    return "squire-related-score-low";
+}
+
 export class RelatedNotesModal extends SuggestModal<RelatedResult> {
     constructor(
         app: App,
@@ -29,7 +35,7 @@ export class RelatedNotesModal extends SuggestModal<RelatedResult> {
         el.createEl("div", { text: result.title, cls: "squire-related-title" });
         el.createEl("small", {
             text: `${score} · ${result.path}`,
-            cls: "squire-related-meta",
+            cls: `squire-related-meta ${scoreClass(result.score)}`,
         });
     }
 

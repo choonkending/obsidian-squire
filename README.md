@@ -73,7 +73,7 @@ Adds a new sub-level number after the last decimal at the end of the note's inde
 
 **Quick modal:** `Ctrl/Cmd+P` → **Show related notes** for a one-off look without changing your layout. Filter by typing.
 
-**Ribbon icon:** The link icon toggles the sidebar view.
+**Ribbon icon:** The network icon toggles the sidebar view. The sidebar's open/closed state persists across Obsidian sessions.
 
 ## ⚙️ Settings
 

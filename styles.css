@@ -48,9 +48,20 @@
 }
 
 .squire-related-score {
-    color: var(--text-muted);
     font-size: var(--font-ui-small);
     flex-shrink: 0;
+}
+
+.squire-related-score-high {
+    color: var(--color-green);
+}
+
+.squire-related-score-medium {
+    color: var(--color-yellow);
+}
+
+.squire-related-score-low {
+    color: var(--color-red);
 }
 
 .squire-link-btn {

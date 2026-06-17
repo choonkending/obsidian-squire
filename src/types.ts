@@ -4,4 +4,5 @@ export interface SquireSettings {
     weightWords: number;
     weightTags: number;
     weightLinks: number;
+    showRelatedNotesSidebar: boolean;
 }

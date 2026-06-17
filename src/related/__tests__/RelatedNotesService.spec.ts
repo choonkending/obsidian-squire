@@ -29,6 +29,7 @@ function makeSettings(
         weightWords: 1,
         weightTags: 0.5,
         weightLinks: 0.5,
+        showRelatedNotesSidebar: true,
         ...overrides,
     };
 }

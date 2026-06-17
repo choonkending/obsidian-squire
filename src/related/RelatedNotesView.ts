@@ -3,10 +3,17 @@ import { RelatedNotesService } from "./RelatedNotesService";
 
 export const RELATED_NOTES_VIEW_TYPE = "squire-related-notes";
 
+function scoreClass(score: number): string {
+    if (score >= 0.7) return "squire-related-score-high";
+    if (score >= 0.4) return "squire-related-score-medium";
+    return "squire-related-score-low";
+}
+
 export class RelatedNotesView extends ItemView {
     constructor(
         leaf: WorkspaceLeaf,
-        private readonly service: RelatedNotesService
+        private readonly service: RelatedNotesService,
+        private readonly onCloseCallback: () => void
     ) {
         super(leaf);
     }
@@ -20,11 +27,15 @@ export class RelatedNotesView extends ItemView {
     }
 
     getIcon(): string {
-        return "link";
+        return "network";
     }
 
     async onOpen(): Promise<void> {
         await this.refresh();
+    }
+
+    async onClose(): Promise<void> {
+        this.onCloseCallback();
     }
 
     async refresh(): Promise<void> {
@@ -62,7 +73,7 @@ export class RelatedNotesView extends ItemView {
             const meta = item.createEl("div", { cls: "squire-related-meta" });
             meta.createEl("span", {
                 text: `${Math.round(result.score * 100)}% match`,
-                cls: "squire-related-score",
+                cls: `squire-related-score ${scoreClass(result.score)}`,
             });
 
             const linkBtn = meta.createEl("button", {
