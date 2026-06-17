@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS: SquireSettings = {
     weightWords: 1,
     weightTags: 0.5,
     weightLinks: 0.5,
+    showRelatedNotesSidebar: true,
 };
 
 export class SquireSettingsTab extends PluginSettingTab {
