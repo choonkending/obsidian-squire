@@ -99,6 +99,3 @@ describe("IncrementLastNumberTransformer Spec", () => {
     });
 
 });
-
-// this is necessary to conform the isolatedModules compiler option and can be removed as soon as an import is added
-export {};
