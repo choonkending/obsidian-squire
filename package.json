@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-squire",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "Your faithful note-taking companion. Automates file title naming, and finds related notes so you can stay in the flow.",
 	"main": "main.js",
 	"scripts": {
