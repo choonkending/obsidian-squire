@@ -86,7 +86,7 @@ describe("IncrementLastNumberTransformer Spec", () => {
                 }
             }
         ].forEach(testCase => {
-            it(`given ${testCase.input} with siblings [${testCase.siblings}] should return status ${testCase.output.status}`, () => {
+            it(`given ${testCase.input} with siblings [${testCase.siblings.join(", ")}] should return status ${testCase.output.status}`, () => {
                 const transformerResult = transformer.transform(testCase.input, testCase.siblings);
                 expect(transformerResult.status).toBe(testCase.output.status);
                 if (transformerResult.status === 'SUCCESS') {
