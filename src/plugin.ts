@@ -18,6 +18,10 @@ export default class SquirePlugin extends Plugin {
     private registeredEvents: Array<() => void> = [];
     relatedNotesService: RelatedNotesService;
 
+    onunload() {
+        this.registeredEvents.forEach(unregister => unregister());
+    }
+
     async onload() {
         await this.loadSettings();
         this.relatedNotesService = new RelatedNotesService(this.app, () => this.settings, buildNoteDoc, collectCandidates);
@@ -113,7 +117,6 @@ export default class SquirePlugin extends Plugin {
                     )
                 );
             this.registerEvent(registerMenuRef);
-
             this.registeredEvents.push(() => this.app.workspace.offref(registerMenuRef));
 
             const command = this.addCommand({
