@@ -4,6 +4,7 @@ import type { SquireSettings } from './types';
 import type { TransformResult } from './transformers';
 import { SquireSettingsTab, DEFAULT_SETTINGS } from './settings';
 import { generateNewDocumentPath } from './pathUtils';
+import { isNumericPrefix, extractPrefix } from './numberUtils';
 import {
     RelatedNotesService,
     RelatedNotesModal,
@@ -17,6 +18,10 @@ export default class SquirePlugin extends Plugin {
     settings: SquireSettings;
     private registeredEvents: Array<() => void> = [];
     relatedNotesService: RelatedNotesService;
+
+    onunload() {
+        this.registeredEvents.forEach(unregister => unregister());
+    }
 
     async onload() {
         await this.loadSettings();
@@ -113,7 +118,6 @@ export default class SquirePlugin extends Plugin {
                     )
                 );
             this.registerEvent(registerMenuRef);
-
             this.registeredEvents.push(() => this.app.workspace.offref(registerMenuRef));
 
             const command = this.addCommand({
@@ -133,8 +137,17 @@ export default class SquirePlugin extends Plugin {
         });
     }
 
-    private async duplicateWithTransform(file: TAbstractFile, transform: (title: string) => TransformResult) {
-        const result = transform(file.name);
+    private getNumericPrefixes(file: TAbstractFile): string[] {
+        const parent = file.parent;
+        if (!parent) return [];
+        return parent.children
+            .filter(c => c instanceof TFile && c.extension === 'md' && c.name !== file.name)
+            .map(c => extractPrefix(c.name, this.settings.indexSeparator))
+            .filter((p): p is string => p !== null && isNumericPrefix(p));
+    }
+
+    private async duplicateWithTransform(file: TAbstractFile, transform: (title: string, siblingPrefixes: string[]) => TransformResult) {
+        const result = transform(file.name, this.getNumericPrefixes(file));
 
         if (result.status === 'SUCCESS') {
             const transformedTitle = result.transformedTitle;

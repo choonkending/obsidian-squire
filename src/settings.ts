@@ -65,7 +65,7 @@ export class SquireSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Word match weight")
-            .setDesc("How strongly word similarity affects results. Higher values favour notes with similar vocabulary. (Default: 1.0)")
+            .setDesc("How strongly word similarity affects results. Higher values favour notes with similar vocabulary. (default: 1.0)")
             .addText(text => text
                 .setPlaceholder(String(DEFAULT_WEIGHTS.words))
                 .setValue(String(this.plugin.settings.weightWords))
@@ -76,7 +76,7 @@ export class SquireSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Tag match weight")
-            .setDesc("How strongly shared tags affect results. Higher values favour notes with the same topic labels. (Default: 0.5)")
+            .setDesc("How strongly shared tags affect results. Higher values favour notes with the same topic labels. (default: 0.5)")
             .addText(text => text
                 .setPlaceholder(String(DEFAULT_WEIGHTS.tags))
                 .setValue(String(this.plugin.settings.weightTags))
@@ -87,7 +87,7 @@ export class SquireSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Link match weight")
-            .setDesc("How strongly shared outgoing links affect results. Higher values favour notes linking to the same pages. (Default: 0.5)")
+            .setDesc("How strongly shared outgoing links affect results. Higher values favour notes linking to the same pages. (default: 0.5)")
             .addText(text => text
                 .setPlaceholder(String(DEFAULT_WEIGHTS.links))
                 .setValue(String(this.plugin.settings.weightLinks))

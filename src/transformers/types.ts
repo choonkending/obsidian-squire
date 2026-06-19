@@ -11,5 +11,5 @@ type TransformFailure = {
 export type TransformResult = TransformSuccess | TransformFailure;
 
 export interface TitleTransformer {
-    transform(title: string): TransformResult
+    transform(title: string, siblingPrefixes: string[]): TransformResult
 }
