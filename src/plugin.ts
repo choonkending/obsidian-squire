@@ -4,6 +4,7 @@ import type { SquireSettings } from './types';
 import type { TransformResult } from './transformers';
 import { SquireSettingsTab, DEFAULT_SETTINGS } from './settings';
 import { generateNewDocumentPath } from './pathUtils';
+import { isNumericPrefix, extractPrefix } from './numberUtils';
 import {
     RelatedNotesService,
     RelatedNotesModal,
@@ -141,8 +142,8 @@ export default class SquirePlugin extends Plugin {
         if (!parent) return [];
         return parent.children
             .filter(c => c instanceof TFile && c.name !== file.name)
-            .map(c => c.name.split(this.settings.indexSeparator)[0].trim())
-            .filter(p => /^\d+(\.\d+)*$/.test(p));
+            .map(c => extractPrefix(c.name, this.settings.indexSeparator))
+            .filter((p): p is string => p !== null && isNumericPrefix(p));
     }
 
     private async duplicateWithTransform(file: TAbstractFile, transform: (title: string, siblingPrefixes: string[]) => TransformResult) {
