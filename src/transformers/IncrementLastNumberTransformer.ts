@@ -8,7 +8,7 @@ export default class IncrementLastNumberTransformer implements TitleTransformer 
         this.indexSeparator = indexSeparator;
     }
 
-    transform = (title: string): TransformResult  => {
+    transform = (title: string, _siblingPrefixes: string[]): TransformResult  => {
         const result = title.split(this.indexSeparator);
         if (result.length > 1) {
             const prefix = result[0];

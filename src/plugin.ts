@@ -133,8 +133,8 @@ export default class SquirePlugin extends Plugin {
         });
     }
 
-    private async duplicateWithTransform(file: TAbstractFile, transform: (title: string) => TransformResult) {
-        const result = transform(file.name);
+    private async duplicateWithTransform(file: TAbstractFile, transform: (title: string, siblingPrefixes: string[]) => TransformResult) {
+        const result = transform(file.name, []);
 
         if (result.status === 'SUCCESS') {
             const transformedTitle = result.transformedTitle;
