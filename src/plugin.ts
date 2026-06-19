@@ -133,8 +133,17 @@ export default class SquirePlugin extends Plugin {
         });
     }
 
+    private getNumericPrefixes(file: TAbstractFile): string[] {
+        const parent = file.parent;
+        if (!parent) return [];
+        return parent.children
+            .filter(c => c instanceof TFile && c.name !== file.name)
+            .map(c => c.name.split(this.settings.indexSeparator)[0].trim())
+            .filter(p => /^\d+(\.\d+)*$/.test(p));
+    }
+
     private async duplicateWithTransform(file: TAbstractFile, transform: (title: string, siblingPrefixes: string[]) => TransformResult) {
-        const result = transform(file.name, []);
+        const result = transform(file.name, this.getNumericPrefixes(file));
 
         if (result.status === 'SUCCESS') {
             const transformedTitle = result.transformedTitle;
