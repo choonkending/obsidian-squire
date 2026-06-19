@@ -84,6 +84,30 @@ describe("IncrementLastNumberTransformer Spec", () => {
                     "status": "SUCCESS",
                     "transformedTitle": "2 - "
                 }
+            },
+            {
+                "input": "1.1 - Anatomy MOC",
+                "siblings": ["1", "1.1.1", "1.1.2", "1.2"],
+                "output": {
+                    "status": "SUCCESS",
+                    "transformedTitle": "1.3 - "
+                }
+            },
+            {
+                "input": "1.1 - Anatomy MOC",
+                "siblings": ["1", "1.3", "1.1.1", "1.1.2", "1.2"],
+                "output": {
+                    "status": "SUCCESS",
+                    "transformedTitle": "1.4 - "
+                }
+            },
+            {
+                "input": "1.1 - Anatomy MOC",
+                "siblings": ["1", "1.8", "1.1.1", "1.1.2", "1.2"],
+                "output": {
+                    "status": "SUCCESS",
+                    "transformedTitle": "1.9 - "
+                }
             }
         ].forEach(testCase => {
             it(`given ${testCase.input} with siblings [${testCase.siblings.join(", ")}] should return status ${testCase.output.status}`, () => {

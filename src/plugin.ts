@@ -141,7 +141,7 @@ export default class SquirePlugin extends Plugin {
         const parent = file.parent;
         if (!parent) return [];
         return parent.children
-            .filter(c => c instanceof TFile && c.name !== file.name)
+            .filter(c => c instanceof TFile && c.extension === 'md' && c.name !== file.name)
             .map(c => extractPrefix(c.name, this.settings.indexSeparator))
             .filter((p): p is string => p !== null && isNumericPrefix(p));
     }
