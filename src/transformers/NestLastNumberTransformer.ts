@@ -8,11 +8,26 @@ export default class NestLastNumberTransformer implements TitleTransformer {
         this.indexSeparator = indexSeparator;
     }
 
-    transform = (title: string, _siblingPrefixes: string[]): TransformResult  => {
+    transform = (title: string, siblingPrefixes: string[]): TransformResult  => {
         const result = title.split(this.indexSeparator);
         if (result.length > 1) {
-            const prefix = result[0];
-            const newTitle = prefix.trim() + ".1" + ` ${this.indexSeparator} `;
+            const prefix = result[0].trim();
+
+            if (!/^\d+(\.\d+)*$/.test(prefix)) {
+                return { status: 'FAILURE', reason: 'Invalid title format' };
+            }
+
+            const childPrefix = prefix + ".";
+            const childSegments = siblingPrefixes
+                .filter(s => {
+                    if (!s.startsWith(childPrefix)) return false;
+                    const remaining = s.slice(childPrefix.length);
+                    return remaining !== "" && !remaining.includes(".") && !isNaN(parseInt(remaining));
+                })
+                .map(s => parseInt(s.slice(childPrefix.length)));
+
+            const maxSegment = Math.max(0, ...childSegments);
+            const newTitle = childPrefix + (maxSegment + 1) + ` ${this.indexSeparator} `;
             return { status: 'SUCCESS', transformedTitle: newTitle };
         }
         return { status: 'FAILURE', reason: 'Invalid title format' };
