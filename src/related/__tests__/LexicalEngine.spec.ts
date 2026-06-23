@@ -45,7 +45,7 @@ describe("LexicalEngine", () => {
                 makeDoc("medium.md", { tokens: termFrequencies(["deep", "ocean"]) }),
             ];
 
-            const results = engine.rank(target, candidates, 5, { words: 1, tags: 0, links: 0 });
+            const results = engine.rank(target, candidates, 5, { words: 1, tags: 0, links: 0, semantic: 0 });
 
             expect(results.map(r => r.path)).toEqual(["high.md", "medium.md"]);
         });
@@ -58,7 +58,7 @@ describe("LexicalEngine", () => {
                 makeDoc("unrelated.md", { tags: new Set(["cooking"]) }),
             ];
 
-            const results = engine.rank(target, candidates, 5, { words: 0, tags: 1, links: 0 });
+            const results = engine.rank(target, candidates, 5, { words: 0, tags: 1, links: 0, semantic: 0 });
 
             expect(results.map(r => r.path)).toEqual(["shared.md"]);
         });
@@ -71,7 +71,7 @@ describe("LexicalEngine", () => {
                 makeDoc("unrelated.md", { links: new Set(["other"]) }),
             ];
 
-            const results = engine.rank(target, candidates, 5, { words: 0, tags: 0, links: 1 });
+            const results = engine.rank(target, candidates, 5, { words: 0, tags: 0, links: 1, semantic: 0 });
 
             expect(results.map(r => r.path)).toEqual(["shared.md"]);
         });
@@ -87,7 +87,7 @@ describe("LexicalEngine", () => {
                 makeDoc("c3.md", { tokens: termFrequencies(["gamma"]) }),
             ];
 
-            const results = engine.rank(target, candidates, 2, { words: 1, tags: 0, links: 0 });
+            const results = engine.rank(target, candidates, 2, { words: 1, tags: 0, links: 0, semantic: 0 });
 
             expect(results).toHaveLength(2);
         });
@@ -114,7 +114,7 @@ describe("LexicalEngine", () => {
                 makeDoc("nomatch.md", { tokens: termFrequencies(["zeta"]) }),
             ];
 
-            expect(engine.rank(target, candidates, 5, { words: 1, tags: 0, links: 0 })).toEqual([]);
+            expect(engine.rank(target, candidates, 5, { words: 1, tags: 0, links: 0, semantic: 0 })).toEqual([]);
         });
 
         it("breaks ties deterministically by title then path", () => {
@@ -127,7 +127,7 @@ describe("LexicalEngine", () => {
                 makeDoc("a.md", { title: "Apple", tokens: termFrequencies(["alpha"]) }),
             ];
 
-            const results = engine.rank(target, candidates, 5, { words: 1, tags: 0, links: 0 });
+            const results = engine.rank(target, candidates, 5, { words: 1, tags: 0, links: 0, semantic: 0 });
 
             expect(results.map(r => r.title)).toEqual(["Apple", "Zebra"]);
         });
@@ -160,7 +160,7 @@ describe("LexicalEngine", () => {
             const engine = new LexicalEngine();
             const a = makeDoc("a.md", { tokens: termFrequencies(["x"]) });
             const b = makeDoc("b.md", { tokens: termFrequencies(["x"]) });
-            expect(engine.score(a, b, { words: 0, tags: 0, links: 0 })).toBe(0);
+            expect(engine.score(a, b, { words: 0, tags: 0, links: 0, semantic: 0 })).toBe(0);
         });
 
         it("returns a normalized score in [0, 1]", () => {

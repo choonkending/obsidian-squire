@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
 import { termFrequencies } from "../text";
 import type { NoteDoc } from "../types";
+import type { RelatedWeights } from "../types";
 import type { SquireSettings } from "../../types";
-import { RelatedNotesService } from "../RelatedNotesService";
+import { RelatedNotesService, combineScores } from "../RelatedNotesService";
 
 const fakeBuildNoteDoc = jest.fn();
 const fakeCollectCandidates = jest.fn();
@@ -30,6 +31,8 @@ function makeSettings(
         weightTags: 0.5,
         weightLinks: 0.5,
         showRelatedNotesSidebar: true,
+        weightSemantic: 0,
+        semanticModelId: 'Xenova/gte-small',
         ...overrides,
     };
 }
@@ -148,5 +151,134 @@ describe("RelatedNotesService", () => {
         const results = await service.findRelated({} as any);
 
         expect(results[0].path).toBe("word-match.md");
+    });
+});
+
+describe("combineScores", () => {
+    it("returns lexical score when semantic weight is 0", () => {
+        const weights: RelatedWeights = { words: 1, tags: 0, links: 0, semantic: 0 };
+        expect(combineScores(0.8, 0.5, weights)).toBeCloseTo(0.8, 6);
+    });
+
+    it("combines lexical and semantic scores", () => {
+        const weights: RelatedWeights = { words: 1, tags: 0, links: 0, semantic: 1 };
+        const result = combineScores(0.6, 0.8, weights);
+        expect(result).toBeCloseTo(0.7, 6);
+    });
+
+    it("semantic score influences result proportionally to its weight", () => {
+        const weights: RelatedWeights = { words: 1, tags: 0, links: 0, semantic: 3 };
+        const result = combineScores(0.6, 0.8, weights);
+        expect(result).toBeCloseTo(0.75, 6);
+    });
+
+    it("returns 0 when total weight is zero", () => {
+        const weights: RelatedWeights = { words: 0, tags: 0, links: 0, semantic: 0 };
+        expect(combineScores(0.9, 0.9, weights)).toBe(0);
+    });
+
+    it("handles undefined semantic score", () => {
+        const weights: RelatedWeights = { words: 1, tags: 0, links: 0, semantic: 1 };
+        expect(combineScores(0.5, undefined, weights)).toBeCloseTo(0.25, 6);
+    });
+
+    it("includes tags and links in lexical total", () => {
+        const weights: RelatedWeights = { words: 1, tags: 0.5, links: 0.5, semantic: 1 };
+        const result = combineScores(0.8, 0.4, weights);
+        expect(result).toBeCloseTo(2 / 3, 6);
+    });
+});
+
+describe("RelatedNotesService with SemanticService", () => {
+    class FakeSemanticService {
+        private scores: Map<string, number>;
+
+        constructor(scores: Record<string, number>) {
+            this.scores = new Map(Object.entries(scores));
+        }
+
+        async ensureIndexed(): Promise<void> {}
+        async score(_text: string): Promise<Map<string, number> | null> {
+            return this.scores;
+        }
+    }
+
+    const fakeBuildNoteDoc2 = jest.fn();
+    const fakeCollectCandidates2 = jest.fn();
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it("semantic score influences ranking when weightSemantic > 0", async () => {
+        const target = makeDoc("target.md", {
+            tokens: termFrequencies(["alpha", "beta"]),
+        });
+        const candidateA = makeDoc("a.md", {
+            tokens: termFrequencies(["alpha", "beta"]),
+        });
+        const candidateB = makeDoc("b.md", {
+            tokens: termFrequencies(["alpha", "beta"]),
+        });
+
+        fakeBuildNoteDoc2.mockResolvedValue(target);
+        fakeCollectCandidates2.mockResolvedValue([target, candidateA, candidateB]);
+
+        const semantic = new FakeSemanticService({ "a.md": 0.9, "b.md": 0.1 });
+
+        const service = new RelatedNotesService(
+            { vault: { cachedRead: async () => "query text" } } as any,
+            () =>
+                makeSettings({
+                    weightWords: 1,
+                    weightTags: 0,
+                    weightLinks: 0,
+                    weightSemantic: 1,
+                }),
+            fakeBuildNoteDoc2,
+            fakeCollectCandidates2,
+            semantic as any
+        );
+
+        const results = await service.findRelated({} as any);
+
+        expect(results[0].path).toBe("a.md");
+        expect(results[1].path).toBe("b.md");
+    });
+
+    it("ranking favors lexical when semantic weight is 0", async () => {
+        const target = makeDoc("target.md", {
+            tokens: termFrequencies(["alpha"]),
+            tags: new Set(["ml"]),
+        });
+        const wordMatch = makeDoc("word.md", {
+            tokens: termFrequencies(["alpha"]),
+        });
+        const tagMatch = makeDoc("tag.md", {
+            tags: new Set(["ml"]),
+        });
+
+        fakeBuildNoteDoc2.mockResolvedValue(target);
+        fakeCollectCandidates2.mockResolvedValue([target, wordMatch, tagMatch]);
+
+        const semantic = new FakeSemanticService({ "word.md": 0.1, "tag.md": 0.9 });
+
+        const service = new RelatedNotesService(
+            { vault: { cachedRead: async () => "query" } } as any,
+            () =>
+                makeSettings({
+                    weightWords: 1,
+                    weightTags: 0.5,
+                    weightLinks: 0,
+                    weightSemantic: 0,
+                }),
+            fakeBuildNoteDoc2,
+            fakeCollectCandidates2,
+            semantic as any
+        );
+
+        const results = await service.findRelated({} as any);
+
+        expect(results[0].path).toBe("word.md");
     });
 });

@@ -13,6 +13,13 @@ import {
     buildNoteDoc,
     collectCandidates,
 } from './related';
+import type { SemanticService, VaultFileReader, VaultEventSource } from './related/semantic';
+import {
+    FixedEmbeddingEngine,
+    EmbeddingIndex,
+    DefaultSemanticService,
+    NullSemanticService,
+} from './related/semantic';
 
 let transformerMenuRef: EventRef | null = null;
 
@@ -29,13 +36,44 @@ export default class SquirePlugin extends Plugin {
 
     async onload() {
         await this.loadSettings();
-        this.relatedNotesService = new RelatedNotesService(this.app, () => this.settings, buildNoteDoc, collectCandidates);
+
+        const semanticService = this.initSemanticService();
+        this.relatedNotesService = new RelatedNotesService(
+            this.app,
+            () => this.settings,
+            buildNoteDoc,
+            collectCandidates,
+            semanticService
+        );
+
         this.addSettingTab(new SquireSettingsTab(this.app, this));
         this.registerTransformers();
         this.registerRelatedNotes();
         if (this.settings.showRelatedNotesSidebar) {
             void this.openRelatedNotesLeaf();
         }
+    }
+
+    private initSemanticService(): SemanticService {
+        const index = new EmbeddingIndex(this.app.vault.adapter);
+        const engine = new FixedEmbeddingEngine();
+        const reader: VaultFileReader = {
+            getMarkdownFiles: () => this.app.vault.getMarkdownFiles(),
+            readFile: async (path: string) => {
+                const file = this.app.vault.getFileByPath(path);
+                return file ? await this.app.vault.cachedRead(file) : "";
+            },
+        };
+        const svc = new DefaultSemanticService(
+            reader,
+            this.app.vault,
+            engine,
+            index,
+            (evt) => this.registerEvent(evt as any),
+            (msg) => new Notice(msg)
+        );
+        void svc.init(this.settings.semanticModelId);
+        return this.settings.weightSemantic > 0 ? svc : new NullSemanticService();
     }
 
     private registerRelatedNotes() {

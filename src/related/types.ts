@@ -16,4 +16,5 @@ export interface RelatedWeights {
     words: number;
     tags: number;
     links: number;
+    semantic: number;
 }

@@ -12,6 +12,8 @@ export const DEFAULT_SETTINGS: SquireSettings = {
     weightTags: 0.5,
     weightLinks: 0.5,
     showRelatedNotesSidebar: true,
+    weightSemantic: 0,
+    semanticModelId: 'Xenova/gte-small',
 };
 
 export class SquireSettingsTab extends PluginSettingTab {
@@ -93,6 +95,39 @@ export class SquireSettingsTab extends PluginSettingTab {
                 .setValue(String(this.plugin.settings.weightLinks))
                 .onChange(async (value) => {
                     this.plugin.settings.weightLinks = normalizeWeight(value, DEFAULT_WEIGHTS.links);
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl).setName("Semantic search").setHeading();
+
+        const modelStatus = containerEl.createEl('p', {
+            text: this.plugin.settings.weightSemantic > 0 ? 'Model status: Ready' : 'Set semantic weight > 0 to enable',
+            cls: 'setting-item-description',
+        });
+
+        new Setting(containerEl)
+            .setName("Semantic match weight")
+            .setDesc("How strongly semantic similarity affects results. Set to 0 to disable. (default: 0)")
+            .addText(text => text
+                .setPlaceholder("0")
+                .setValue(String(this.plugin.settings.weightSemantic))
+                .onChange(async (value) => {
+                    this.plugin.settings.weightSemantic = normalizeWeight(value, DEFAULT_WEIGHTS.semantic);
+                    modelStatus.textContent = this.plugin.settings.weightSemantic > 0
+                        ? 'Model status: Ready'
+                        : 'Set semantic weight > 0 to enable';
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Semantic model")
+            .setDesc("Embedding model used for semantic similarity.")
+            .addDropdown(dropdown => dropdown
+                .addOption('Xenova/gte-small', 'gte-small (33M params)')
+                .addOption('Xenova/all-MiniLM-L12-v2', 'all-MiniLM-L12-v2')
+                .setValue(this.plugin.settings.semanticModelId)
+                .onChange(async (value) => {
+                    this.plugin.settings.semanticModelId = value;
                     await this.plugin.saveSettings();
                 }));
     }

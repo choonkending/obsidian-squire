@@ -1,10 +1,11 @@
-import { cosineSimilarity, jaccardSimilarity } from "./text";
+import { cosineSimilaritySparse, jaccardSimilarity } from "./text";
 import type { NoteDoc, RelatedResult, RelatedWeights } from "./types";
 
 export const DEFAULT_WEIGHTS: RelatedWeights = {
     words: 1.0,
     tags: 0.5,
     links: 0.5,
+    semantic: 0,
 };
 
 export default class LexicalEngine {
@@ -20,7 +21,7 @@ export default class LexicalEngine {
             return 0;
         }
 
-        const wordScore = cosineSimilarity(target.tokens, candidate.tokens);
+        const wordScore = cosineSimilaritySparse(target.tokens, candidate.tokens);
         const tagScore = jaccardSimilarity(target.tags, candidate.tags);
         const linkScore = jaccardSimilarity(target.links, candidate.links);
 

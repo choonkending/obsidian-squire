@@ -4,6 +4,21 @@ import LexicalEngine from "./LexicalEngine";
 import { buildNoteDoc, collectCandidates } from "./vault";
 import type { NoteDoc } from "./types";
 import type { RelatedResult, RelatedWeights } from "./types";
+import type { SemanticService } from "./semantic";
+import { NullSemanticService } from "./semantic";
+
+export function combineScores(
+    lexical: number,
+    semantic: number | undefined,
+    weights: RelatedWeights
+): number {
+    const lexicalTotal = weights.words + weights.tags + weights.links;
+    const totalWeight = lexicalTotal + weights.semantic;
+    if (totalWeight <= 0) {
+        return 0;
+    }
+    return (lexical * lexicalTotal + (semantic ?? 0) * weights.semantic) / totalWeight;
+}
 
 export class RelatedNotesService {
     private readonly engine = new LexicalEngine();
@@ -12,18 +27,53 @@ export class RelatedNotesService {
         private readonly app: App,
         private readonly getSettings: () => SquireSettings,
         private readonly buildNoteDoc: (app: App, file: TFile) => Promise<NoteDoc>,
-        private readonly collectCandidates: (app: App, exclude?: TFile) => Promise<NoteDoc[]>
+        private readonly collectCandidates: (app: App, exclude?: TFile) => Promise<NoteDoc[]>,
+        private readonly semanticService: SemanticService = new NullSemanticService()
     ) {}
 
     private weights(): RelatedWeights {
         const s = this.getSettings();
-        return { words: s.weightWords, tags: s.weightTags, links: s.weightLinks };
+        return { words: s.weightWords, tags: s.weightTags, links: s.weightLinks, semantic: s.weightSemantic };
     }
 
     async findRelated(file: TFile): Promise<RelatedResult[]> {
         const settings = this.getSettings();
+        const weights = this.weights();
+
         const target = await this.buildNoteDoc(this.app, file);
         const candidates = await this.collectCandidates(this.app, file);
-        return this.engine.rank(target, candidates, settings.relatedNotesLimit, this.weights());
+
+        const ranked = this.engine.rank(target, candidates, candidates.length, weights);
+        const lexicalScores = new Map<string, number>(
+            ranked.map(r => [r.path, r.score])
+        );
+
+        let semanticScores: Map<string, number> | null = null;
+        if (weights.semantic > 0) {
+            const text = await this.app.vault.cachedRead(file);
+            semanticScores = await this.semanticService.score(text);
+        }
+
+        const results: RelatedResult[] = [];
+
+        for (const candidate of candidates) {
+            if (candidate.path === target.path) continue;
+            const lexical = lexicalScores.get(candidate.path) ?? 0;
+            const semantic = semanticScores?.get(candidate.path);
+            const combined = combineScores(lexical, semantic, weights);
+            if (combined > 0) {
+                results.push({
+                    path: candidate.path,
+                    title: candidate.title,
+                    score: combined,
+                });
+            }
+        }
+
+        results.sort(
+            (a, b) => b.score - a.score || a.title.localeCompare(b.title) || a.path.localeCompare(b.path)
+        );
+
+        return results.slice(0, settings.relatedNotesLimit);
     }
 }

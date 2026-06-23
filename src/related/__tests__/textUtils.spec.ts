@@ -2,7 +2,8 @@ import {
     tokenize,
     stripMarkdown,
     termFrequencies,
-    cosineSimilarity,
+    cosineSimilaritySparse,
+    cosineSimilarityDense,
     jaccardSimilarity,
 } from "../text";
 
@@ -91,31 +92,65 @@ describe("textUtils", () => {
         });
     });
 
-    describe("cosineSimilarity", () => {
+    describe("cosineSimilaritySparse", () => {
         it("returns 1 for identical vectors", () => {
             const a = termFrequencies(["machine", "learning", "learning"]);
             const b = termFrequencies(["machine", "learning", "learning"]);
-            expect(cosineSimilarity(a, b)).toBeCloseTo(1, 5);
+            expect(cosineSimilaritySparse(a, b)).toBeCloseTo(1, 5);
         });
 
         it("returns 0 for disjoint vectors", () => {
             const a = termFrequencies(["cat", "dog"]);
             const b = termFrequencies(["car", "plane"]);
-            expect(cosineSimilarity(a, b)).toBe(0);
+            expect(cosineSimilaritySparse(a, b)).toBe(0);
         });
 
         it("returns 0 when one vector is empty", () => {
             const a = termFrequencies(["cat"]);
             const b = termFrequencies([]);
-            expect(cosineSimilarity(a, b)).toBe(0);
+            expect(cosineSimilaritySparse(a, b)).toBe(0);
         });
 
         it("returns a value between 0 and 1 for partial overlap", () => {
             const a = termFrequencies(["machine", "learning", "models"]);
             const b = termFrequencies(["machine", "learning", "vision"]);
-            const score = cosineSimilarity(a, b);
+            const score = cosineSimilaritySparse(a, b);
             expect(score).toBeGreaterThan(0);
             expect(score).toBeLessThan(1);
+        });
+    });
+
+    describe("cosineSimilarityDense", () => {
+        it("returns 1 for identical vectors", () => {
+            expect(cosineSimilarityDense([1, 0, 0], [1, 0, 0])).toBeCloseTo(1, 6);
+        });
+
+        it("returns 0 for orthogonal vectors", () => {
+            expect(cosineSimilarityDense([1, 0, 0], [0, 1, 0])).toBeCloseTo(0, 6);
+        });
+
+        it("returns -1 for opposite vectors", () => {
+            expect(cosineSimilarityDense([1, 0], [-1, 0])).toBeCloseTo(-1, 6);
+        });
+
+        it("returns a value in [-1, 1] for arbitrary vectors", () => {
+            const sim = cosineSimilarityDense([0.5, 0.5], [0.3, 0.7]);
+            expect(sim).toBeGreaterThanOrEqual(-1);
+            expect(sim).toBeLessThanOrEqual(1);
+        });
+
+        it("returns 0 when either vector is empty", () => {
+            expect(cosineSimilarityDense([], [1, 2])).toBe(0);
+            expect(cosineSimilarityDense([1, 2], [])).toBe(0);
+        });
+
+        it("returns 0 when vectors have different lengths", () => {
+            expect(cosineSimilarityDense([1, 0], [1, 0, 0])).toBe(0);
+        });
+
+        it("returns 0 when magnitude is zero", () => {
+            expect(cosineSimilarityDense([0, 0], [1, 0])).toBe(0);
+            expect(cosineSimilarityDense([1, 0], [0, 0])).toBe(0);
         });
     });
 
