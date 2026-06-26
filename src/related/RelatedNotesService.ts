@@ -22,14 +22,23 @@ export function combineScores(
 
 export class RelatedNotesService {
     private readonly engine = new LexicalEngine();
+    algorithmLabel = "TF-IDF";
 
     constructor(
         private readonly app: App,
         private readonly getSettings: () => SquireSettings,
         private readonly buildNoteDoc: (app: App, file: TFile) => Promise<NoteDoc>,
         private readonly collectCandidates: (app: App, exclude?: TFile) => Promise<NoteDoc[]>,
-        private readonly semanticService: SemanticService = new NullSemanticService()
+        private semanticService: SemanticService = new NullSemanticService()
     ) {}
+
+    setSemanticService(svc: SemanticService): void {
+        this.semanticService = svc;
+    }
+
+    setAlgorithmLabel(label: string): void {
+        this.algorithmLabel = label;
+    }
 
     private weights(): RelatedWeights {
         const s = this.getSettings();

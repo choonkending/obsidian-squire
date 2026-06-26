@@ -13,9 +13,9 @@ import {
     buildNoteDoc,
     collectCandidates,
 } from './related';
-import type { SemanticService, VaultFileReader, VaultEventSource } from './related/semantic';
+import type { SemanticService, VaultFileReader, VaultEventSource, EmbeddingEngine } from './related/semantic';
 import {
-    FixedEmbeddingEngine,
+    createTransformersEngine,
     EmbeddingIndex,
     DefaultSemanticService,
     NullSemanticService,
@@ -27,6 +27,7 @@ export default class SquirePlugin extends Plugin {
     settings: SquireSettings;
     private registeredEvents: Array<() => void> = [];
     relatedNotesService: RelatedNotesService;
+    private currentModelId = "";
 
     onunload() {
         this.registeredEvents.forEach(unregister => unregister());
@@ -37,7 +38,8 @@ export default class SquirePlugin extends Plugin {
     async onload() {
         await this.loadSettings();
 
-        const semanticService = this.initSemanticService();
+        const semanticService = await this.initSemanticService();
+        this.currentModelId = this.settings.semanticModelId;
         this.relatedNotesService = new RelatedNotesService(
             this.app,
             () => this.settings,
@@ -45,6 +47,7 @@ export default class SquirePlugin extends Plugin {
             collectCandidates,
             semanticService
         );
+        this.relatedNotesService.setAlgorithmLabel(this.algorithmLabel());
 
         this.addSettingTab(new SquireSettingsTab(this.app, this));
         this.registerTransformers();
@@ -54,9 +57,31 @@ export default class SquirePlugin extends Plugin {
         }
     }
 
-    private initSemanticService(): SemanticService {
+    private algorithmLabel(): string {
+        if (this.settings.weightSemantic <= 0) return "TF-IDF";
+        return this.semanticModelShortName();
+    }
+
+    private semanticModelShortName(): string {
+        const id = this.settings.semanticModelId;
+        const short = id.includes("/") ? id.split("/")[1] : id;
+        return `Model: ${short}`;
+    }
+
+    private async initSemanticService(): Promise<SemanticService> {
+        if (this.settings.weightSemantic <= 0) {
+            return new NullSemanticService();
+        }
+
         const index = new EmbeddingIndex(this.app.vault.adapter);
-        const engine = new FixedEmbeddingEngine();
+        let engine: EmbeddingEngine;
+        try {
+            const pluginDir = this.manifest.dir ?? "";
+            engine = await createTransformersEngine(pluginDir, this.app.vault.adapter, this.settings.semanticModelId);
+        } catch (e) {
+            new Notice(`Semantic search unavailable: ${e instanceof Error ? e.message : e}`);
+            return new NullSemanticService();
+        }
         const reader: VaultFileReader = {
             getMarkdownFiles: () => this.app.vault.getMarkdownFiles(),
             readFile: async (path: string) => {
@@ -73,7 +98,7 @@ export default class SquirePlugin extends Plugin {
             (msg) => new Notice(msg)
         );
         void svc.init(this.settings.semanticModelId);
-        return this.settings.weightSemantic > 0 ? svc : new NullSemanticService();
+        return svc;
     }
 
     private registerRelatedNotes() {
@@ -228,5 +253,14 @@ export default class SquirePlugin extends Plugin {
     async saveSettings() {
         await this.saveData(this.settings);
         this.registerTransformers();
+
+        if (this.currentModelId !== this.settings.semanticModelId) {
+            this.currentModelId = this.settings.semanticModelId;
+            new Notice("Switching semantic model; re-indexing notes...");
+            const svc = await this.initSemanticService();
+            this.relatedNotesService.setSemanticService(svc);
+            this.relatedNotesService.setAlgorithmLabel(this.algorithmLabel());
+            this.refreshRelatedNotesViews();
+        }
     }
 }
