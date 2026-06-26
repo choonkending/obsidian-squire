@@ -31,8 +31,7 @@ function makeSettings(
         weightTags: 0.5,
         weightLinks: 0.5,
         showRelatedNotesSidebar: true,
-        weightSemantic: 0,
-        semanticModelId: 'Xenova/gte-small',
+        semanticModelId: '',
         ...overrides,
     };
 }
@@ -155,37 +154,17 @@ describe("RelatedNotesService", () => {
 });
 
 describe("combineScores", () => {
-    it("returns lexical score when semantic weight is 0", () => {
-        const weights: RelatedWeights = { words: 1, tags: 0, links: 0, semantic: 0 };
-        expect(combineScores(0.8, 0.5, weights)).toBeCloseTo(0.8, 6);
+    it("returns lexical score when semantic is undefined", () => {
+        expect(combineScores(0.8, undefined)).toBeCloseTo(0.8, 6);
     });
 
-    it("combines lexical and semantic scores", () => {
-        const weights: RelatedWeights = { words: 1, tags: 0, links: 0, semantic: 1 };
-        const result = combineScores(0.6, 0.8, weights);
+    it("averages lexical and semantic scores", () => {
+        const result = combineScores(0.6, 0.8);
         expect(result).toBeCloseTo(0.7, 6);
     });
 
-    it("semantic score influences result proportionally to its weight", () => {
-        const weights: RelatedWeights = { words: 1, tags: 0, links: 0, semantic: 3 };
-        const result = combineScores(0.6, 0.8, weights);
-        expect(result).toBeCloseTo(0.75, 6);
-    });
-
-    it("returns 0 when total weight is zero", () => {
-        const weights: RelatedWeights = { words: 0, tags: 0, links: 0, semantic: 0 };
-        expect(combineScores(0.9, 0.9, weights)).toBe(0);
-    });
-
-    it("handles undefined semantic score", () => {
-        const weights: RelatedWeights = { words: 1, tags: 0, links: 0, semantic: 1 };
-        expect(combineScores(0.5, undefined, weights)).toBeCloseTo(0.25, 6);
-    });
-
-    it("includes tags and links in lexical total", () => {
-        const weights: RelatedWeights = { words: 1, tags: 0.5, links: 0.5, semantic: 1 };
-        const result = combineScores(0.8, 0.4, weights);
-        expect(result).toBeCloseTo(2 / 3, 6);
+    it("returns 0 when lexical is 0 and semantic is 0", () => {
+        expect(combineScores(0, 0)).toBe(0);
     });
 });
 
@@ -210,7 +189,7 @@ describe("RelatedNotesService with SemanticService", () => {
         jest.clearAllMocks();
     });
 
-    it("semantic score influences ranking when weightSemantic > 0", async () => {
+    it("semantic score influences ranking when model is set", async () => {
         const target = makeDoc("target.md", {
             tokens: termFrequencies(["alpha", "beta"]),
         });
@@ -233,7 +212,7 @@ describe("RelatedNotesService with SemanticService", () => {
                     weightWords: 1,
                     weightTags: 0,
                     weightLinks: 0,
-                    weightSemantic: 1,
+        semanticModelId: '',
                 }),
             fakeBuildNoteDoc2,
             fakeCollectCandidates2,
@@ -246,7 +225,7 @@ describe("RelatedNotesService with SemanticService", () => {
         expect(results[1].path).toBe("b.md");
     });
 
-    it("ranking favors lexical when semantic weight is 0", async () => {
+    it("ranking favors lexical when model is not set", async () => {
         const target = makeDoc("target.md", {
             tokens: termFrequencies(["alpha"]),
             tags: new Set(["ml"]),
@@ -270,7 +249,7 @@ describe("RelatedNotesService with SemanticService", () => {
                     weightWords: 1,
                     weightTags: 0.5,
                     weightLinks: 0,
-                    weightSemantic: 0,
+                    semanticModelId: '',
                 }),
             fakeBuildNoteDoc2,
             fakeCollectCandidates2,

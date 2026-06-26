@@ -5,7 +5,6 @@ export const DEFAULT_WEIGHTS: RelatedWeights = {
     words: 1.0,
     tags: 0.5,
     links: 0.5,
-    semantic: 0,
 };
 
 export default class LexicalEngine {

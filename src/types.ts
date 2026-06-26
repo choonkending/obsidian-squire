@@ -5,6 +5,5 @@ export interface SquireSettings {
     weightTags: number;
     weightLinks: number;
     showRelatedNotesSidebar: boolean;
-    weightSemantic: number;
     semanticModelId: string;
 }

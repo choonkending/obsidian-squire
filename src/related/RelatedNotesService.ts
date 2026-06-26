@@ -9,15 +9,10 @@ import { NullSemanticService } from "./semantic";
 
 export function combineScores(
     lexical: number,
-    semantic: number | undefined,
-    weights: RelatedWeights
+    semantic: number | undefined
 ): number {
-    const lexicalTotal = weights.words + weights.tags + weights.links;
-    const totalWeight = lexicalTotal + weights.semantic;
-    if (totalWeight <= 0) {
-        return 0;
-    }
-    return (lexical * lexicalTotal + (semantic ?? 0) * weights.semantic) / totalWeight;
+    if (semantic === undefined) return lexical;
+    return (lexical + semantic) / 2;
 }
 
 export class RelatedNotesService {
@@ -42,7 +37,7 @@ export class RelatedNotesService {
 
     private weights(): RelatedWeights {
         const s = this.getSettings();
-        return { words: s.weightWords, tags: s.weightTags, links: s.weightLinks, semantic: s.weightSemantic };
+        return { words: s.weightWords, tags: s.weightTags, links: s.weightLinks };
     }
 
     async findRelated(file: TFile): Promise<RelatedResult[]> {
@@ -58,7 +53,7 @@ export class RelatedNotesService {
         );
 
         let semanticScores: Map<string, number> | null = null;
-        if (weights.semantic > 0) {
+        if (settings.semanticModelId) {
             const text = await this.app.vault.cachedRead(file);
             semanticScores = await this.semanticService.score(text);
         }
@@ -69,7 +64,7 @@ export class RelatedNotesService {
             if (candidate.path === target.path) continue;
             const lexical = lexicalScores.get(candidate.path) ?? 0;
             const semantic = semanticScores?.get(candidate.path);
-            const combined = combineScores(lexical, semantic, weights);
+            const combined = combineScores(lexical, semantic);
             if (combined > 0) {
                 results.push({
                     path: candidate.path,

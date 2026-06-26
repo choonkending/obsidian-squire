@@ -58,8 +58,8 @@ export default class SquirePlugin extends Plugin {
     }
 
     private algorithmLabel(): string {
-        if (this.settings.weightSemantic <= 0) return "TF-IDF";
-        return this.semanticModelShortName();
+        if (!this.settings.semanticModelId) return "TF-IDF";
+        return `Hybrid: TF-IDF + ${this.semanticModelShortName()}`;
     }
 
     private semanticModelShortName(): string {
@@ -69,7 +69,7 @@ export default class SquirePlugin extends Plugin {
     }
 
     private async initSemanticService(): Promise<SemanticService> {
-        if (this.settings.weightSemantic <= 0) {
+        if (!this.settings.semanticModelId) {
             return new NullSemanticService();
         }
 
@@ -79,7 +79,9 @@ export default class SquirePlugin extends Plugin {
             const pluginDir = this.manifest.dir ?? "";
             engine = await createTransformersEngine(pluginDir, this.app.vault.adapter, this.settings.semanticModelId);
         } catch (e) {
-            new Notice(`Semantic search unavailable: ${e instanceof Error ? e.message : e}`);
+            new Notice(`Semantic search unavailable: ${e instanceof Error ? e.message : e}; falling back to TF-IDF`);
+            this.settings.semanticModelId = '';
+            void this.saveSettings();
             return new NullSemanticService();
         }
         const reader: VaultFileReader = {
