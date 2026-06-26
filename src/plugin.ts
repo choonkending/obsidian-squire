@@ -1,4 +1,4 @@
-import { Notice, Plugin, TAbstractFile, TFile, debounce } from 'obsidian';
+import { Notice, Plugin, TAbstractFile, TFile, debounce, EventRef } from 'obsidian';
 import config from './config';
 import type { SquireSettings } from './types';
 import type { TransformResult } from './transformers';
@@ -14,6 +14,8 @@ import {
     collectCandidates,
 } from './related';
 
+let transformerMenuRef: EventRef | null = null;
+
 export default class SquirePlugin extends Plugin {
     settings: SquireSettings;
     private registeredEvents: Array<() => void> = [];
@@ -21,6 +23,8 @@ export default class SquirePlugin extends Plugin {
 
     onunload() {
         this.registeredEvents.forEach(unregister => unregister());
+        this.removeCommand('show-related-notes');
+        this.removeCommand('toggle-related-notes-view');
     }
 
     async onload() {
@@ -104,22 +108,28 @@ export default class SquirePlugin extends Plugin {
     }
 
     private registerTransformers() {
+        if (transformerMenuRef) {
+            this.app.workspace.offref(transformerMenuRef);
+            transformerMenuRef = null;
+        }
+
+        const ref = this.app.workspace.on('file-menu', (menu, file) => {
+            for (const configItem of config) {
+                const transformer = new configItem.transformer(this.settings.indexSeparator);
+                menu.addItem(item =>
+                    item
+                        .setTitle(configItem.title)
+                        .setIcon('document')
+                        .onClick(async () => await this.duplicateWithTransform(file, transformer.transform))
+                );
+            }
+        });
+        this.registerEvent(ref);
+        transformerMenuRef = ref;
+
         this.registeredEvents.forEach(unregister => unregister());
         this.registeredEvents = [];
-
-        config.forEach(configItem => {
-            const transformer = new configItem.transformer(this.settings.indexSeparator);
-            const registerMenuRef = this.app.workspace.on('file-menu', (menu, file) => 
-                    menu.addItem(item => 
-                        item
-                            .setTitle(configItem.title)
-                            .setIcon('document')
-                            .onClick(async () => await this.duplicateWithTransform(file, transformer.transform))
-                    )
-                );
-            this.registerEvent(registerMenuRef);
-            this.registeredEvents.push(() => this.app.workspace.offref(registerMenuRef));
-
+        for (const configItem of config) {
             const command = this.addCommand({
                 id: configItem.id,
                 name: configItem.title,
@@ -129,12 +139,11 @@ export default class SquirePlugin extends Plugin {
                         new Notice('No active file to run command on.');
                         return;
                     }
-                    await this.duplicateWithTransform(file, transformer.transform);
+                    await this.duplicateWithTransform(file, new configItem.transformer(this.settings.indexSeparator).transform);
                 }
             });
-
             this.registeredEvents.push(() => this.removeCommand(command.id));
-        });
+        }
     }
 
     private getNumericPrefixes(file: TAbstractFile): string[] {
