@@ -43,9 +43,20 @@ export class RelatedNotesView extends ItemView {
         container.empty();
         container.addClass("squire-related-view");
 
+        const header = container.createEl("div", { cls: "squire-related-header" });
+        const titleRow = header.createEl("div", { cls: "squire-related-header-row" });
+        titleRow.createEl("span", {
+            text: "Related Notes",
+            cls: "squire-related-header-title",
+        });
+        titleRow.createEl("span", {
+            text: this.service.algorithmLabel,
+            cls: "squire-related-algorithm",
+        });
+
         const file = this.app.workspace.getActiveFile();
         if (!file) {
-            container.createEl("p", {
+            header.createEl("p", {
                 text: "Open a note to see related notes.",
                 cls: "squire-related-empty",
             });
