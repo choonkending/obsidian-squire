@@ -1,4 +1,4 @@
-function magnitude(vector: Map<string, number>): number {
+function sparseMagnitude(vector: Map<string, number>): number {
     let sum = 0;
     for (const weight of vector.values()) {
         sum += weight * weight;
@@ -6,7 +6,7 @@ function magnitude(vector: Map<string, number>): number {
     return Math.sqrt(sum);
 }
 
-export function cosineSimilarity(
+export function cosineSimilaritySparse(
     a: Map<string, number>,
     b: Map<string, number>
 ): number {
@@ -28,5 +28,24 @@ export function cosineSimilarity(
         return 0;
     }
 
-    return dot / (magnitude(a) * magnitude(b));
+    return dot / (sparseMagnitude(a) * sparseMagnitude(b));
+}
+
+export function cosineSimilarityDense(a: number[], b: number[]): number {
+    if (a.length !== b.length || a.length === 0) {
+        return 0;
+    }
+    let dot = 0;
+    let magA = 0;
+    let magB = 0;
+    for (let i = 0; i < a.length; i++) {
+        dot += a[i] * b[i];
+        magA += a[i] * a[i];
+        magB += b[i] * b[i];
+    }
+    const denom = Math.sqrt(magA) * Math.sqrt(magB);
+    if (denom === 0) {
+        return 0;
+    }
+    return dot / denom;
 }
