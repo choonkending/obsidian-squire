@@ -30,6 +30,6 @@
 		"typescript-eslint": "^8.48.0"
 	},
 	"dependencies": {
-		"@huggingface/transformers": "^4.2.0"
+		"@huggingface/transformers": "4.2.0"
 	}
 }

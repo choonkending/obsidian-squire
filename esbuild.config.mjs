@@ -43,22 +43,22 @@ const transformersWebPlugin = {
 		});
 		build.onLoad({ filter: /transformers\.web\.js$/ }, (args) => {
 			const content = readFileSync(args.path, "utf-8");
-			return {
-				contents: content
-					.replace(
-						"if (ORT_SYMBOL in globalThis) {",
-						"if (false) {"
-					)
-					.replace(
-						'IS_PROCESS_AVAILABLE && process?.release?.name === "node" && !IS_DENO_WEB_RUNTIME',
-						"false"
-					)
-					.replace(
-						'const isNode = typeof process !== "undefined" && process?.release?.name === "node"',
-						"const isNode = false"
-					),
-				loader: "js",
-			};
+			const patches = [
+				{ from: "if (ORT_SYMBOL in globalThis) {", to: "if (false) {" },
+				{ from: 'IS_PROCESS_AVAILABLE && process?.release?.name === "node" && !IS_DENO_WEB_RUNTIME', to: "false" },
+				{ from: 'const isNode = typeof process !== "undefined" && process?.release?.name === "node"', to: "const isNode = false" },
+			];
+			let result = content;
+			for (const { from, to } of patches) {
+				if (!result.includes(from)) {
+					throw new Error(
+						`[transformers-web] Patch failed: pattern not found in transformers.web.js\n` +
+						`  Pattern: ${from}`
+					);
+				}
+				result = result.replaceAll(from, to);
+			}
+			return { contents: result, loader: "js" };
 		});
 	},
 };
