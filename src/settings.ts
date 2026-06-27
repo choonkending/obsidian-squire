@@ -101,11 +101,11 @@ export class SquireSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Scorer")
-            .setDesc("TF-IDF uses lexical scoring only. A model enables hybrid TF-IDF + semantic embedding scoring.")
+            .setDesc("Use TF-IDF for lexical scoring only, or select a model for hybrid TF-IDF + semantic embedding scoring.")
             .addDropdown(dropdown => dropdown
                 .addOption('', 'TF-IDF (lexical only)')
-                .addOption('Xenova/gte-small', 'gte-small (33M params)')
-                .addOption('Xenova/all-MiniLM-L12-v2', 'all-MiniLM-L12-v2')
+                .addOption('Xenova/gte-small', 'Gte-small (33M params)')
+                .addOption('Xenova/all-MiniLM-L12-v2', 'All-MiniLM-L12-v2')
                 .setValue(this.plugin.settings.semanticModelId)
                 .onChange(async (value) => {
                     this.plugin.settings.semanticModelId = value;

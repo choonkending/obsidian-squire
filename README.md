@@ -6,7 +6,7 @@
 
 ### ✨ Features
 - **Smart Index Numbering:** Automatically generate the new note's prefix (incrementing or nesting numbers) while leaving the title blank for you to instantly type the new subject. Right-click or command palette to duplicate.
-- **Related Notes:** Automatically surface connected notes via word, tag, and link similarity — no manual searching required.
+- **Related Notes:** Automatically surface connected notes via word, tag, and link similarity, with an optional semantic embedding engine for deeper content understanding — no manual searching required.
 
 ---
 
@@ -67,13 +67,15 @@ Adds a new sub-level number after the last decimal at the end of the note's inde
 
 ## 🔗 Related Notes
 
-*Manually hunting for connections between notes interrupts your thinking. Squire automatically surfaces related notes using lexical scoring — no tagging tax, no manual cross-referencing.*
+*Manually hunting for connections between notes interrupts your thinking. Squire automatically surfaces related notes using lexical scoring — no tagging tax, no manual cross-referencing. Optionally, add semantic understanding by selecting a Transformer model in Settings.*
 
-**Sidebar view:** Opens a persistent panel that auto-refreshes as you switch notes. Click a result to open it; click **Link** to insert `[[Title]]` at your cursor.
+**Sidebar view:** Opens a persistent panel that auto-refreshes as you switch notes. An algorithm badge in the header shows which scorer is active (TF‑IDF / Hybrid). Click a result to open it; click **Link** to insert `[[Title]]` at your cursor.
 
 **Quick modal:** `Ctrl/Cmd+P` → **Show related notes** for a one-off look without changing your layout. Filter by typing.
 
 **Ribbon icon:** The network icon toggles the sidebar view. The sidebar's open/closed state persists across Obsidian sessions.
+
+**Hybrid scoring:** When a model is selected, Squire combines TF‑IDF and dense‑embedding cosine similarity into a single relevance score — so notes that use different words but share the same meaning still surface.
 
 ## ⚙️ Settings
 
@@ -82,6 +84,8 @@ Adds a new sub-level number after the last decimal at the end of the note's inde
 **Index separator** — the character(s) between your index number and title (e.g. `-` in `1 - Biology.md`). Must be safe for file names, max 5 characters.
 
 **Number of suggestions** — how many related notes to return (1–50, default 5).
+
+**Similarity scoring** — choose **TF‑IDF (lexical only)** or select a Transformer model for hybrid semantic + lexical scoring. Models are downloaded on first use and cached in the plugin folder. Switch back to TF‑IDF any time by selecting the default.
 
 **Match weights** — control how much word overlap, shared tags, and shared outgoing links influence similarity. Defaults: Words `1.0`, Tags `0.5`, Links `0.5`. Set to `0` to disable a signal.
 
@@ -93,5 +97,7 @@ Adds a new sub-level number after the last decimal at the end of the note's inde
 ## 🤝 Contributing & Support
 
 I accept Pull Requests, GitHub Issues, and general feedback! If you have a specific use case or transformer idea, please look at contributing to help make Squire better for everyone.
+
+The semantic engine lives in `src/related/semantic/` — contributions for new embedding engines, additional Transformer models, or alternative backends are welcome.
 
 Funding: If you find this plugin useful and it saves you time, just let me know—hearing how it helps your workflow is greatly appreciated!
