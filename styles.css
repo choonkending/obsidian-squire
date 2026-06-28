@@ -2,6 +2,36 @@
     padding: 0 8px;
 }
 
+.squire-related-header {
+    padding: 12px 0 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.squire-related-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.squire-related-header-title {
+    font-weight: var(--font-weight-semibold, 600);
+    font-size: var(--font-ui-medium);
+    color: var(--text-normal);
+}
+
+.squire-related-algorithm {
+    display: inline-flex;
+    align-items: center;
+    background: var(--tag-background);
+    color: var(--tag-color);
+    font-size: var(--font-ui-smaller);
+    padding: 2px 8px;
+    border-radius: var(--tag-radius, 8px);
+    line-height: 1.4;
+    border: 1px solid var(--tag-border-color, transparent);
+}
+
 .squire-related-empty {
     color: var(--text-muted);
     font-size: var(--font-ui-small);

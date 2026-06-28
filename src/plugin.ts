@@ -1,4 +1,4 @@
-import { Notice, Plugin, TAbstractFile, TFile, debounce } from 'obsidian';
+import { Notice, Plugin, TAbstractFile, TFile, debounce, EventRef } from 'obsidian';
 import config from './config';
 import type { SquireSettings } from './types';
 import type { TransformResult } from './transformers';
@@ -13,25 +13,95 @@ import {
     buildNoteDoc,
     collectCandidates,
 } from './related';
+import type { SemanticService, VaultFileReader, VaultEventSource, EmbeddingEngine } from './related/semantic';
+import {
+    createTransformersEngine,
+    EmbeddingIndex,
+    DefaultSemanticService,
+    NullSemanticService,
+} from './related/semantic';
+import { DiskCache } from './related/semantic/DiskCache';
 
 export default class SquirePlugin extends Plugin {
     settings: SquireSettings;
-    private registeredEvents: Array<() => void> = [];
+    private transformerMenuRef: EventRef | null = null;
     relatedNotesService: RelatedNotesService;
+    private currentModelId = "";
+    private statusBarItem: HTMLElement;
 
     onunload() {
-        this.registeredEvents.forEach(unregister => unregister());
+        this.removeCommand('show-related-notes');
+        this.removeCommand('toggle-related-notes-view');
     }
 
     async onload() {
         await this.loadSettings();
-        this.relatedNotesService = new RelatedNotesService(this.app, () => this.settings, buildNoteDoc, collectCandidates);
+
+        this.statusBarItem = this.addStatusBarItem();
+        this.statusBarItem.style.display = 'none';
+
+        this.currentModelId = this.settings.semanticModelId;
+        this.relatedNotesService = new RelatedNotesService(
+            this.app,
+            () => this.settings,
+            buildNoteDoc,
+            collectCandidates,
+            await this.initSemanticService(),
+            this.algorithmLabel()
+        );
+
         this.addSettingTab(new SquireSettingsTab(this.app, this));
         this.registerTransformers();
         this.registerRelatedNotes();
         if (this.settings.showRelatedNotesSidebar) {
             void this.openRelatedNotesLeaf();
         }
+    }
+
+    private algorithmLabel(): string {
+        if (!this.settings.semanticModelId) return "TF-IDF";
+        return `Hybrid: TF-IDF + ${this.semanticModelShortName()}`;
+    }
+
+    private semanticModelShortName(): string {
+        const id = this.settings.semanticModelId;
+        const short = id.includes("/") ? id.split("/")[1] : id;
+        return `Model: ${short}`;
+    }
+
+    private async initSemanticService(): Promise<SemanticService> {
+        if (!this.settings.semanticModelId) {
+            return new NullSemanticService();
+        }
+
+        const index = new EmbeddingIndex(this.app.vault.adapter);
+        let engine: EmbeddingEngine;
+        try {
+            const pluginDir = this.manifest.dir ?? "";
+            engine = await createTransformersEngine(pluginDir, this.app.vault.adapter, this.settings.semanticModelId);
+        } catch (e) {
+            new Notice(`Semantic search unavailable: ${e instanceof Error ? e.message : e}; falling back to TF-IDF`);
+            this.settings.semanticModelId = '';
+            void this.saveSettings();
+            return new NullSemanticService();
+        }
+        const reader: VaultFileReader = {
+            getMarkdownFiles: () => this.app.vault.getMarkdownFiles(),
+            readFile: async (path: string) => {
+                const file = this.app.vault.getFileByPath(path);
+                return file ? await this.app.vault.cachedRead(file) : "";
+            },
+        };
+        const svc = new DefaultSemanticService(
+            reader,
+            this.app.vault,
+            engine,
+            index,
+            (evt) => this.registerEvent(evt as EventRef),
+            (msg) => new Notice(msg)
+        );
+        await svc.init(this.settings.semanticModelId);
+        return svc;
     }
 
     private registerRelatedNotes() {
@@ -104,37 +174,24 @@ export default class SquirePlugin extends Plugin {
     }
 
     private registerTransformers() {
-        this.registeredEvents.forEach(unregister => unregister());
-        this.registeredEvents = [];
+        if (this.transformerMenuRef) {
+            this.app.workspace.offref(this.transformerMenuRef);
+            this.transformerMenuRef = null;
+        }
 
-        config.forEach(configItem => {
-            const transformer = new configItem.transformer(this.settings.indexSeparator);
-            const registerMenuRef = this.app.workspace.on('file-menu', (menu, file) => 
-                    menu.addItem(item => 
-                        item
-                            .setTitle(configItem.title)
-                            .setIcon('document')
-                            .onClick(async () => await this.duplicateWithTransform(file, transformer.transform))
-                    )
+        const ref = this.app.workspace.on('file-menu', (menu, file) => {
+            for (const configItem of config) {
+                const transformer = new configItem.transformer(this.settings.indexSeparator);
+                menu.addItem(item =>
+                    item
+                        .setTitle(configItem.title)
+                        .setIcon('document')
+                        .onClick(async () => await this.duplicateWithTransform(file, transformer.transform))
                 );
-            this.registerEvent(registerMenuRef);
-            this.registeredEvents.push(() => this.app.workspace.offref(registerMenuRef));
-
-            const command = this.addCommand({
-                id: configItem.id,
-                name: configItem.title,
-                callback: async () => {
-                    const file = this.app.workspace.getActiveFile();
-                    if (!file) {
-                        new Notice('No active file to run command on.');
-                        return;
-                    }
-                    await this.duplicateWithTransform(file, transformer.transform);
-                }
-            });
-
-            this.registeredEvents.push(() => this.removeCommand(command.id));
+            }
         });
+        this.registerEvent(ref);
+        this.transformerMenuRef = ref;
     }
 
     private getNumericPrefixes(file: TAbstractFile): string[] {
@@ -178,8 +235,60 @@ export default class SquirePlugin extends Plugin {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded ?? {});
     }
 
+    private setStatus(text: string): void {
+        this.statusBarItem.textContent = text;
+        this.statusBarItem.style.display = '';
+    }
+
+    private clearStatus(): void {
+        this.statusBarItem.style.display = 'none';
+    }
+
+    private async reinitSemanticService(): Promise<void> {
+        this.currentModelId = this.settings.semanticModelId;
+
+        if (!this.settings.semanticModelId) {
+            const svc = new NullSemanticService();
+            this.relatedNotesService.setSemanticService(svc);
+            this.relatedNotesService.algorithmLabel = this.algorithmLabel();
+            this.refreshRelatedNotesViews();
+            return;
+        }
+
+        const cache = new DiskCache(this.app.vault.adapter, this.manifest.dir ?? "");
+        const cached = await cache.isCached(this.settings.semanticModelId);
+
+        if (!cached) {
+            this.setStatus("Downloading model…");
+            new Notice("Switching model; downloading…");
+        }
+
+        const svc = await this.initSemanticService();
+
+        this.setStatus("Indexing notes…");
+        new Notice("Model loaded; indexing notes…");
+
+        this.relatedNotesService.setSemanticService(svc);
+        this.relatedNotesService.algorithmLabel = this.algorithmLabel();
+        this.refreshRelatedNotesViews();
+
+        this.clearStatus();
+        new Notice("Model ready");
+    }
+
+    async clearModelCache(): Promise<void> {
+        if (!this.manifest.dir) return;
+        const cache = new DiskCache(this.app.vault.adapter, this.manifest.dir);
+        await cache.clearAll();
+        new Notice("Model cache cleared.");
+    }
+
     async saveSettings() {
         await this.saveData(this.settings);
         this.registerTransformers();
+
+        if (this.currentModelId !== this.settings.semanticModelId) {
+            await this.reinitSemanticService();
+        }
     }
 }

@@ -4,6 +4,7 @@ import type { SquireSettings } from './types';
 import { containsUnsafeFileNameCharacters, MAX_SEPARATOR_LENGTH, UNSAFE_FILE_NAME_CHARACTERS } from './fileUtils';
 import { DEFAULT_WEIGHTS } from './related';
 import { DEFAULT_RESULT_LIMIT, normalizeResultLimit, normalizeWeight } from './related/settingsUtils';
+import { MODELS } from './related/semantic/models';
 
 export const DEFAULT_SETTINGS: SquireSettings = {
     indexSeparator: '-',
@@ -12,6 +13,7 @@ export const DEFAULT_SETTINGS: SquireSettings = {
     weightTags: 0.5,
     weightLinks: 0.5,
     showRelatedNotesSidebar: true,
+    semanticModelId: '',
 };
 
 export class SquireSettingsTab extends PluginSettingTab {
@@ -20,6 +22,19 @@ export class SquireSettingsTab extends PluginSettingTab {
     constructor(app: App, plugin: SquirePlugin) {
         super(app, plugin);
         this.plugin = plugin;
+    }
+
+    private addWeightSetting(containerEl: HTMLElement, name: string, desc: string, fallback: number, getValue: () => number, setValue: (v: number) => void): void {
+        new Setting(containerEl)
+            .setName(name)
+            .setDesc(`${desc} (default: ${fallback})`)
+            .addText(text => text
+                .setPlaceholder(String(fallback))
+                .setValue(String(getValue()))
+                .onChange(async (value) => {
+                    setValue(normalizeWeight(value, fallback));
+                    await this.plugin.saveSettings();
+                }));
     }
 
     display(): void {
@@ -63,37 +78,34 @@ export class SquireSettingsTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        new Setting(containerEl)
-            .setName("Word match weight")
-            .setDesc("How strongly word similarity affects results. Higher values favour notes with similar vocabulary. (default: 1.0)")
-            .addText(text => text
-                .setPlaceholder(String(DEFAULT_WEIGHTS.words))
-                .setValue(String(this.plugin.settings.weightWords))
-                .onChange(async (value) => {
-                    this.plugin.settings.weightWords = normalizeWeight(value, DEFAULT_WEIGHTS.words);
-                    await this.plugin.saveSettings();
-                }));
+        this.addWeightSetting(containerEl, "Word match weight", "How strongly word similarity affects results. Higher values favour notes with similar vocabulary.", DEFAULT_WEIGHTS.words, () => this.plugin.settings.weightWords, v => this.plugin.settings.weightWords = v);
+        this.addWeightSetting(containerEl, "Tag match weight", "How strongly shared tags affect results. Higher values favour notes with the same topic labels.", DEFAULT_WEIGHTS.tags, () => this.plugin.settings.weightTags, v => this.plugin.settings.weightTags = v);
+        this.addWeightSetting(containerEl, "Link match weight", "How strongly shared outgoing links affect results. Higher values favour notes linking to the same pages.", DEFAULT_WEIGHTS.links, () => this.plugin.settings.weightLinks, v => this.plugin.settings.weightLinks = v);
+
+        new Setting(containerEl).setName("Similarity scoring").setHeading();
 
         new Setting(containerEl)
-            .setName("Tag match weight")
-            .setDesc("How strongly shared tags affect results. Higher values favour notes with the same topic labels. (default: 0.5)")
-            .addText(text => text
-                .setPlaceholder(String(DEFAULT_WEIGHTS.tags))
-                .setValue(String(this.plugin.settings.weightTags))
+            .setName("Scorer")
+            .setDesc("Use TF-IDF for lexical scoring only, or select a model for hybrid TF-IDF + semantic embedding scoring.")
+            .addDropdown(dropdown => {
+                dropdown.addOption('', 'TF-IDF (lexical only)');
+                for (const model of Object.values(MODELS)) {
+                    dropdown.addOption(model.id, model.label);
+                }
+                dropdown.setValue(this.plugin.settings.semanticModelId)
                 .onChange(async (value) => {
-                    this.plugin.settings.weightTags = normalizeWeight(value, DEFAULT_WEIGHTS.tags);
+                    this.plugin.settings.semanticModelId = value;
                     await this.plugin.saveSettings();
-                }));
+                });
+            })
 
         new Setting(containerEl)
-            .setName("Link match weight")
-            .setDesc("How strongly shared outgoing links affect results. Higher values favour notes linking to the same pages. (default: 0.5)")
-            .addText(text => text
-                .setPlaceholder(String(DEFAULT_WEIGHTS.links))
-                .setValue(String(this.plugin.settings.weightLinks))
-                .onChange(async (value) => {
-                    this.plugin.settings.weightLinks = normalizeWeight(value, DEFAULT_WEIGHTS.links);
-                    await this.plugin.saveSettings();
+            .setName("Clear model cache")
+            .setDesc("Delete downloaded model files to free up disk space.")
+            .addButton(button => button
+                .setButtonText("Clear cache")
+                .onClick(async () => {
+                    await this.plugin.clearModelCache();
                 }));
     }
 
