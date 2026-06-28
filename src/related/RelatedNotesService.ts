@@ -1,7 +1,6 @@
 import { App, TFile } from "obsidian";
 import type { SquireSettings } from "../types";
 import LexicalEngine from "./LexicalEngine";
-import { buildNoteDoc, collectCandidates } from "./vault";
 import type { NoteDoc } from "./types";
 import type { RelatedResult, RelatedWeights } from "./types";
 import type { SemanticService } from "./semantic";

@@ -96,7 +96,7 @@ describe("DefaultSemanticService", () => {
 
         const handler = events.handlers.get("modify");
         if (handler) {
-            await handler({ path: "a.md", extension: "md" });
+            handler({ path: "a.md", extension: "md" });
         }
 
         expect(idx.has("a.md")).toBe(true);

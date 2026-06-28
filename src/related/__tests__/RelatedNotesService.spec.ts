@@ -38,6 +38,7 @@ function makeApp(): App {
 }
 
 function makeFile(): TFile {
+    // eslint-disable-next-line obsidianmd/no-tfile-tfolder-cast
     return { path: "test.md" } as unknown as TFile;
 }
 

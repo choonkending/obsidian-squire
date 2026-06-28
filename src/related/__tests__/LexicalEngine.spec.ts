@@ -1,4 +1,4 @@
-import LexicalEngine, { DEFAULT_WEIGHTS } from "../LexicalEngine";
+import LexicalEngine from "../LexicalEngine";
 import { termFrequencies } from "../text";
 import type { NoteDoc } from "../types";
 

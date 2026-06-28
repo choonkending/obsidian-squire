@@ -86,9 +86,9 @@ export class SquireSettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Scorer")
-            .setDesc("Use TF-IDF for lexical scoring only, or select a model for hybrid TF-IDF + semantic embedding scoring.")
+            .setDesc("Use tf-idf for lexical scoring only, or select a model for hybrid tf-idf and semantic embedding scoring")
             .addDropdown(dropdown => {
-                dropdown.addOption('', 'TF-IDF (lexical only)');
+                dropdown.addOption('', 'Tf-idf (lexical only)');
                 for (const model of Object.values(MODELS)) {
                     dropdown.addOption(model.id, model.label);
                 }
