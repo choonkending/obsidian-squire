@@ -1,3 +1,7 @@
+.squire-status-hidden {
+    display: none;
+}
+
 .squire-related-view {
     padding: 0 8px;
 }

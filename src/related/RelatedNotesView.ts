@@ -46,7 +46,7 @@ export class RelatedNotesView extends ItemView {
         const header = container.createEl("div", { cls: "squire-related-header" });
         const titleRow = header.createEl("div", { cls: "squire-related-header-row" });
         titleRow.createEl("span", {
-            text: "Related Notes",
+            text: "Related notes",
             cls: "squire-related-header-title",
         });
         titleRow.createEl("span", {

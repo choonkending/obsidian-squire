@@ -20,7 +20,7 @@ export class FixedEmbeddingEngine implements EmbeddingEngine {
     }
 
     async computeEmbedding(text: string): Promise<EmbeddingVector> {
-        const vector: EmbeddingVector = new Array(this.dimension);
+        const vector = Array.from<number>({ length: this.dimension });
         for (let i = 0; i < this.dimension; i++) {
             vector[i] = hashToFloat(text, i);
         }

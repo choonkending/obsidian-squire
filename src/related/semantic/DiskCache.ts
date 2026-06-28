@@ -58,12 +58,12 @@ export class DiskCache {
         const name = this.fileName(filePath);
         if (!sanitized.some(key => name.includes(key))) {
           await this.adapter.remove(filePath);
-          console.log(`[DiskCache] removed stale cache file: ${name}`);
+          console.debug(`[DiskCache] removed stale cache file: ${name}`);
           deleted++;
         }
       }
       if (deleted > 0) {
-        console.log(`[DiskCache] cleared ${deleted} stale file(s) from cache`);
+        console.debug(`[DiskCache] cleared ${deleted} stale file(s) from cache`);
       }
       return deleted;
     } catch {
@@ -77,7 +77,7 @@ export class DiskCache {
       for (const filePath of entries.files) {
         await this.adapter.remove(filePath);
       }
-    } catch {}
+    } catch { /* ignore */ }
   }
 
 }

@@ -13,7 +13,7 @@ import {
     buildNoteDoc,
     collectCandidates,
 } from './related';
-import type { SemanticService, VaultFileReader, VaultEventSource, EmbeddingEngine } from './related/semantic';
+import type { SemanticService, VaultFileReader, EmbeddingEngine } from './related/semantic';
 import {
     createTransformersEngine,
     EmbeddingIndex,
@@ -38,7 +38,7 @@ export default class SquirePlugin extends Plugin {
         await this.loadSettings();
 
         this.statusBarItem = this.addStatusBarItem();
-        this.statusBarItem.style.display = 'none';
+        this.statusBarItem.addClass('squire-status-hidden');
 
         this.currentModelId = this.settings.semanticModelId;
         this.relatedNotesService = new RelatedNotesService(
@@ -74,7 +74,7 @@ export default class SquirePlugin extends Plugin {
             return new NullSemanticService();
         }
 
-        const index = new EmbeddingIndex(this.app.vault.adapter);
+        const index = new EmbeddingIndex(this.app.vault.adapter, `${this.app.vault.configDir}/squire-embedding-index.json`);
         let engine: EmbeddingEngine;
         try {
             const pluginDir = this.manifest.dir ?? "";
@@ -237,11 +237,11 @@ export default class SquirePlugin extends Plugin {
 
     private setStatus(text: string): void {
         this.statusBarItem.textContent = text;
-        this.statusBarItem.style.display = '';
+        this.statusBarItem.removeClass('squire-status-hidden');
     }
 
     private clearStatus(): void {
-        this.statusBarItem.style.display = 'none';
+        this.statusBarItem.addClass('squire-status-hidden');
     }
 
     private async reinitSemanticService(): Promise<void> {

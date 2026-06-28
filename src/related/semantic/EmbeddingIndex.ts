@@ -1,7 +1,7 @@
 import type { EmbeddingVector } from "./types";
 import { cosineSimilarityDense } from "../text";
 
-const DEFAULT_STORAGE_KEY = ".obsidian/squire-embedding-index.json";
+const DEFAULT_STORAGE_KEY = "squire-embedding-index.json";
 
 export interface DataAdapter {
     read(path: string): Promise<string>;
@@ -72,7 +72,7 @@ export class EmbeddingIndex {
             return;
         }
         try {
-            const parsed: IndexData = JSON.parse(raw);
+            const parsed = JSON.parse(raw) as IndexData;
             if (parsed.modelId !== modelId) {
                 this.clear();
                 this.modelId = modelId;

@@ -12,6 +12,7 @@ export default defineConfig([
     languageOptions: {
       parser: tsparser,
       parserOptions: { project: "./tsconfig.json" },
+      globals: { console: 'readonly' },
     }
   },
   {
@@ -30,5 +31,11 @@ export default defineConfig([
       'jest/valid-expect': 'error',
     }
   },
-  globalIgnores(['node_modules/', 'main.js', 'version-bump.mjs', 'jest.config.js'])
+  {
+    files: ['esbuild.config.mjs'],
+    languageOptions: {
+      globals: { console: 'readonly', process: 'readonly', __dirname: 'readonly' },
+    },
+  },
+  globalIgnores(['node_modules/', 'main.js', 'version-bump.mjs', 'jest.config.js', 'ort-wasm-simd-threaded.jsep.mjs'])
 ]);

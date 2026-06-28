@@ -90,8 +90,8 @@ export class DefaultSemanticService implements SemanticService {
     }
 
     private registerVaultEvents(): void {
-        this.registerEvent(this.events.on("modify", (file) => this.reindexFile(file)));
-        this.registerEvent(this.events.on("create", (file) => this.reindexFile(file)));
+        this.registerEvent(this.events.on("modify", (file) => { void this.reindexFile(file); }));
+        this.registerEvent(this.events.on("create", (file) => { void this.reindexFile(file); }));
         this.registerEvent(
             this.events.on("delete", (file) => {
                 this.index.delete(file.path);

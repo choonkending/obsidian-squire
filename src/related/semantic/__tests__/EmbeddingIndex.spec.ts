@@ -1,4 +1,5 @@
 import { EmbeddingIndex } from "../EmbeddingIndex";
+import type { IndexData } from "../EmbeddingIndex";
 import { cosineSimilarityDense } from "../../text";
 import type { DataAdapter } from "../EmbeddingIndex";
 
@@ -177,7 +178,7 @@ describe("EmbeddingIndex persistence", () => {
         const idx = new EmbeddingIndex(adapter);
         await idx.load("m");
         await idx.save();
-        const saved = JSON.parse(adapter.raw.values().next().value);
+        const saved: IndexData = JSON.parse(adapter.raw.values().next().value as string) as IndexData;
         expect(saved.modelId).toBe("");
         expect(saved.entries).toEqual([]);
     });
