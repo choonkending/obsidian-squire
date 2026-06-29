@@ -53,9 +53,11 @@ export default class SquirePlugin extends Plugin {
         this.addSettingTab(new SquireSettingsTab(this.app, this));
         this.registerTransformers();
         this.registerRelatedNotes();
-        if (this.settings.showRelatedNotesSidebar) {
-            void this.openRelatedNotesLeaf();
-        }
+        this.app.workspace.onLayoutReady(() => {
+            if (this.settings.showRelatedNotesSidebar) {
+                void this.openRelatedNotesLeaf();
+            }
+        });
     }
 
     private algorithmLabel(): string {
