@@ -59,6 +59,9 @@ export class DefaultSemanticService implements SemanticService {
             } catch {
                 // skip files that fail to read
             }
+            if (i % 5 === 0) {
+                await new Promise(r => setTimeout(r, 0));
+            }
             if (i % 10 === 0 && i > 0) {
                 this.notify(`Indexing notes for semantic search: ${i}/${total}`);
             }
