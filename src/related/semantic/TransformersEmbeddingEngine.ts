@@ -9,13 +9,12 @@ async function setupEnv(pluginDir: string, adapter: DataAdapter): Promise<DiskCa
   const cache = new DiskCache(adapter, pluginDir);
 
   const wasmPath = `${pluginDir}/ort-wasm-simd-threaded.jsep.wasm`;
-  let wasmBinary: Uint8Array;
+  let wasmBinary: Uint8Array | undefined;
   try {
     const buffer = await adapter.readBinary(wasmPath);
     wasmBinary = new Uint8Array(buffer);
   } catch (e) {
     console.warn("[transformers] Failed to load WASM binary:", e);
-    return cache;
   }
 
   let jsepBlobUrl: string | undefined;
@@ -30,7 +29,9 @@ async function setupEnv(pluginDir: string, adapter: DataAdapter): Promise<DiskCa
   }
 
   if (env.backends?.onnx?.wasm) {
-    env.backends.onnx.wasm.wasmBinary = wasmBinary;
+    if (wasmBinary) {
+      env.backends.onnx.wasm.wasmBinary = wasmBinary;
+    }
     env.backends.onnx.wasm.numThreads = 1;
     if (jsepBlobUrl) {
       env.backends.onnx.wasm.wasmPaths = { mjs: jsepBlobUrl };
