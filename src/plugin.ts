@@ -69,7 +69,7 @@ export default class SquirePlugin extends Plugin {
         return `Model: ${short}`;
     }
 
-    private async initSemanticService(): Promise<SemanticService> {
+    private async initSemanticService(onProgress?: (pct: number) => void): Promise<SemanticService> {
         if (!this.settings.semanticModelId) {
             return new NullSemanticService();
         }
@@ -78,7 +78,7 @@ export default class SquirePlugin extends Plugin {
         let engine: EmbeddingEngine;
         try {
             const pluginDir = this.manifest.dir ?? "";
-            engine = await createTransformersEngine(pluginDir, this.app.vault.adapter, this.settings.semanticModelId);
+            engine = await createTransformersEngine(pluginDir, this.app.vault.adapter, this.settings.semanticModelId, onProgress);
         } catch (e) {
             new Notice(`Semantic search unavailable: ${e instanceof Error ? e.message : e}; falling back to TF-IDF`);
             this.settings.semanticModelId = '';
@@ -235,6 +235,8 @@ export default class SquirePlugin extends Plugin {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded ?? {});
     }
 
+    private loadingModel = false;
+
     private setStatus(text: string): void {
         this.statusBarItem.textContent = text;
         this.statusBarItem.removeClass('squire-status-hidden');
@@ -244,36 +246,42 @@ export default class SquirePlugin extends Plugin {
         this.statusBarItem.addClass('squire-status-hidden');
     }
 
-    private async reinitSemanticService(): Promise<void> {
-        this.currentModelId = this.settings.semanticModelId;
+    private async reinitSemanticService(onProgress?: (pct: number) => void): Promise<void> {
+        if (this.loadingModel) return;
+        this.loadingModel = true;
+        try {
+            this.currentModelId = this.settings.semanticModelId;
 
-        if (!this.settings.semanticModelId) {
-            const svc = new NullSemanticService();
+            if (!this.settings.semanticModelId) {
+                const svc = new NullSemanticService();
+                this.relatedNotesService.setSemanticService(svc);
+                this.relatedNotesService.algorithmLabel = this.algorithmLabel();
+                this.refreshRelatedNotesViews();
+                return;
+            }
+
+            const cache = new DiskCache(this.app.vault.adapter, this.manifest.dir ?? "");
+            const cached = await cache.isCached(this.settings.semanticModelId);
+
+            if (!cached) {
+                this.setStatus("Downloading model: 0%");
+                new Notice("Switching model; downloading…");
+            }
+
+            const svc = await this.initSemanticService(onProgress);
+
+            this.setStatus("Indexing notes…");
+            new Notice("Model loaded; indexing notes…");
+
             this.relatedNotesService.setSemanticService(svc);
             this.relatedNotesService.algorithmLabel = this.algorithmLabel();
             this.refreshRelatedNotesViews();
-            return;
+
+            new Notice("Model ready");
+        } finally {
+            this.loadingModel = false;
+            this.clearStatus();
         }
-
-        const cache = new DiskCache(this.app.vault.adapter, this.manifest.dir ?? "");
-        const cached = await cache.isCached(this.settings.semanticModelId);
-
-        if (!cached) {
-            this.setStatus("Downloading model…");
-            new Notice("Switching model; downloading…");
-        }
-
-        const svc = await this.initSemanticService();
-
-        this.setStatus("Indexing notes…");
-        new Notice("Model loaded; indexing notes…");
-
-        this.relatedNotesService.setSemanticService(svc);
-        this.relatedNotesService.algorithmLabel = this.algorithmLabel();
-        this.refreshRelatedNotesViews();
-
-        this.clearStatus();
-        new Notice("Model ready");
     }
 
     async clearModelCache(): Promise<void> {
@@ -288,7 +296,9 @@ export default class SquirePlugin extends Plugin {
         this.registerTransformers();
 
         if (this.currentModelId !== this.settings.semanticModelId) {
-            await this.reinitSemanticService();
+            void this.reinitSemanticService().catch(e => {
+                new Notice(`Model loading failed: ${e instanceof Error ? e.message : String(e)}`);
+            });
         }
     }
 }
