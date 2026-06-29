@@ -1,7 +1,7 @@
 {
 	"id": "squire",
 	"name": "Squire",
-	"version": "0.4.1",
+	"version": "0.4.2",
 	"minAppVersion": "1.12.0",
 	"description": "Your faithful note-taking companion. Automates file title naming, and finds related notes so you can stay in the flow.",
 	"author": "choonkending",
