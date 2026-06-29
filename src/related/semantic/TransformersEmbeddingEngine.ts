@@ -54,7 +54,8 @@ type PipelineExtractor = (
 export async function createTransformersEngine(
   pluginDir: string,
   adapter: DataAdapter,
-  modelId: string = DEFAULT_MODEL_ID
+  modelId: string = DEFAULT_MODEL_ID,
+  onProgress?: (pct: number) => void
 ): Promise<EmbeddingEngine> {
   if (!envInitialized) {
     const cache = await setupEnv(pluginDir, adapter);
@@ -64,6 +65,13 @@ export async function createTransformersEngine(
 
   const extractor = await pipeline("feature-extraction", modelId, {
     dtype: "q8",
+    progress_callback: onProgress
+      ? (info) => {
+          if (info.status === "progress") {
+            onProgress(info.progress);
+          }
+        }
+      : undefined,
   }) as unknown as PipelineExtractor;
 
   return {
