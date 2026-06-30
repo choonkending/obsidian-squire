@@ -12,7 +12,7 @@ export default defineConfig([
     languageOptions: {
       parser: tsparser,
       parserOptions: { project: "./tsconfig.json" },
-      globals: { console: 'readonly' },
+      globals: { console: 'readonly', setTimeout: 'readonly' },
     }
   },
   {
