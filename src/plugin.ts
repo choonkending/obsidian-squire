@@ -228,15 +228,15 @@ export default class SquirePlugin extends Plugin {
                 const copiedFile = await this.app.vault.copy(file, newPath);
                 if (copiedFile instanceof TFile) {
                     await this.app.workspace.getLeaf().openFile(copiedFile);
-                    new Notice("Duplicated note created: " + copiedFile.path);
+                    new Notice("Squired note created: " + copiedFile.path);
                 } else {
-                    new Notice("Duplication failed: unable to create file.");
+                    new Notice("Squiring failed: unable to create file.");
                 }
             } catch(error) {
-                new Notice(`Duplication failed due to ${error}`);
+                new Notice(`Squiring failed due to ${error}`);
             }
         } else {
-            new Notice(`Duplication failed: ${result.reason}`);
+            new Notice(`Squiring failed: ${result.reason}`);
         }
     }
 
