@@ -15,12 +15,13 @@ import {
 } from './related';
 import type { SemanticService, VaultFileReader, EmbeddingEngine } from './related/semantic';
 import {
-    createTransformersEngine,
+    WorkerEmbeddingEngine,
     EmbeddingIndex,
     DefaultSemanticService,
     NullSemanticService,
 } from './related/semantic';
 import { DiskCache } from './related/semantic/DiskCache';
+import { workerUrl } from './related/semantic/indexer.worker';
 
 export default class SquirePlugin extends Plugin {
     settings: SquireSettings;
@@ -80,7 +81,18 @@ export default class SquirePlugin extends Plugin {
         let engine: EmbeddingEngine;
         try {
             const pluginDir = this.manifest.dir ?? "";
-            engine = await createTransformersEngine(pluginDir, this.app.vault.adapter, this.settings.semanticModelId, onProgress);
+            const adapter = this.app.vault.adapter;
+            const wasmBuffer = await adapter.readBinary(`${pluginDir}/ort-wasm-simd-threaded.jsep.wasm`);
+            const jsepBuffer = await adapter.readBinary(`${pluginDir}/ort-wasm-simd-threaded.jsep.mjs`);
+            const jsepSource = new TextDecoder().decode(jsepBuffer)
+                .replace(/globalThis\.process\?\.versions\?\.node/g, "false");
+            const worker = new Worker(workerUrl);
+            engine = new WorkerEmbeddingEngine(
+                new Uint8Array(wasmBuffer),
+                jsepSource,
+                this.settings.semanticModelId,
+                worker,
+            );
         } catch (e) {
             new Notice(`Semantic search unavailable: ${e instanceof Error ? e.message : e}; falling back to TF-IDF`);
             this.settings.semanticModelId = '';
@@ -262,13 +274,8 @@ export default class SquirePlugin extends Plugin {
                 return;
             }
 
-            const cache = new DiskCache(this.app.vault.adapter, this.manifest.dir ?? "");
-            const cached = await cache.isCached(this.settings.semanticModelId);
-
-            if (!cached) {
-                this.setStatus("Downloading model: 0%");
-                new Notice("Switching model; downloading…");
-            }
+            this.setStatus("Loading model…");
+            new Notice("Switching model…");
 
             const svc = await this.initSemanticService(onProgress);
 

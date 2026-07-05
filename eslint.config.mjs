@@ -12,7 +12,32 @@ export default defineConfig([
     languageOptions: {
       parser: tsparser,
       parserOptions: { project: "./tsconfig.json" },
-      globals: { console: 'readonly', setTimeout: 'readonly' },
+      globals: {
+        console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        crypto: 'readonly',
+        Worker: 'readonly',
+        MessageEvent: 'readonly',
+        ErrorEvent: 'readonly',
+        URL: 'readonly',
+        Blob: 'readonly',
+      },
+    }
+  },
+  {
+    files: ["**/*.worker.ts"],
+    languageOptions: {
+      parser: tsparser,
+      parserOptions: { project: "./tsconfig.json" },
+      globals: {
+        globalThis: 'readonly',
+        console: 'readonly',
+        postMessage: 'readonly',
+        MessageEvent: 'readonly',
+        URL: 'readonly',
+        Blob: 'readonly',
+      },
     }
   },
   {

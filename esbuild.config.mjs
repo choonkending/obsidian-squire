@@ -60,6 +60,37 @@ const transformersWebPlugin = {
 	},
 };
 
+const inlineWorkerPlugin = {
+	name: "inline-worker",
+	setup(build) {
+		build.onResolve({ filter: /\.worker$/ }, (args) => ({
+			path: resolve(args.resolveDir, args.path),
+			namespace: "worker",
+		}));
+		build.onLoad({ filter: /indexer\.worker$/, namespace: "worker" }, async (args) => {
+			const result = await esbuild.build({
+				entryPoints: [args.path],
+				bundle: true,
+				format: "iife",
+				target: "es2020",
+				minify: prod,
+				external: ["obsidian", "electron"],
+				plugins: [transformersWebPlugin],
+				write: false,
+			});
+			const code = result.outputFiles[0].text;
+			return {
+				contents: [
+					`var _workerCode = ${JSON.stringify(code)};`,
+					`var _blob = new Blob([_workerCode], { type: "application/javascript" });`,
+					`export var workerUrl = URL.createObjectURL(_blob);`,
+				].join("\n"),
+				loader: "js",
+			};
+		});
+	},
+};
+
 const context = await esbuild.context({
 	entryPoints: ["main.ts"],
 	bundle: true,
@@ -86,7 +117,7 @@ const context = await esbuild.context({
 	treeShaking: true,
 	outfile: "main.js",
 	minify: prod,
-	plugins: [wasmCopyPlugin, transformersWebPlugin],
+	plugins: [wasmCopyPlugin, transformersWebPlugin, inlineWorkerPlugin],
 });
 
 if (prod) {
