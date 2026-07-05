@@ -77,7 +77,10 @@ export default class SquirePlugin extends Plugin {
             return new NullSemanticService();
         }
 
-        const index = new EmbeddingIndex(this.app.vault.adapter, `${this.app.vault.configDir}/squire-embedding-index.json`);
+        const indexPath = `${this.manifest.dir}/squire-embedding-index.json`;
+        const index = new EmbeddingIndex(this.app.vault.adapter, indexPath);
+        await this.migrateEmbeddingIndex();
+
         let engine: EmbeddingEngine;
         try {
             const pluginDir = this.manifest.dir ?? "";
@@ -297,6 +300,15 @@ export default class SquirePlugin extends Plugin {
         const cache = new DiskCache(this.app.vault.adapter, this.manifest.dir);
         await cache.clearAll();
         new Notice("Model cache cleared.");
+    }
+
+    private async migrateEmbeddingIndex(): Promise<void> {
+        const oldIndexPath = `${this.app.vault.configDir}/squire-embedding-index.json`;
+        try {
+            if (await this.app.vault.adapter.exists(oldIndexPath)) {
+                await this.app.vault.adapter.remove(oldIndexPath);
+            }
+        } catch { /* skip */ }
     }
 
     async saveSettings() {

@@ -26,3 +26,6 @@ ort-wasm-simd-threaded*
 
 # DiskCache artifact from Transformers.js
 .cache/
+
+# Embedding index (generated at runtime)
+squire-embedding-index.json
