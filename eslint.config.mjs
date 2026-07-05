@@ -31,6 +31,7 @@ export default defineConfig([
       parser: tsparser,
       parserOptions: { project: "./tsconfig.json" },
       globals: {
+        self: 'readonly',
         globalThis: 'readonly',
         console: 'readonly',
         postMessage: 'readonly',
