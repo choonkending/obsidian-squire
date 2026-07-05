@@ -63,16 +63,27 @@ export class RelatedNotesView extends ItemView {
             return;
         }
 
+        const contentEl = container.createEl("div", { cls: "squire-related-content" });
+
+        if (this.service.algorithmLabel !== "TF-IDF") {
+            contentEl.createEl("p", {
+                text: "Indexing notes...",
+                cls: "squire-related-empty",
+            });
+        }
+
         const results = await this.service.findRelated(file);
+        contentEl.empty();
+
         if (results.length === 0) {
-            container.createEl("p", {
+            contentEl.createEl("p", {
                 text: "No related notes found.",
                 cls: "squire-related-empty",
             });
             return;
         }
 
-        const list = container.createEl("div", { cls: "squire-related-list" });
+        const list = contentEl.createEl("div", { cls: "squire-related-list" });
         for (const result of results) {
             const item = list.createEl("div", { cls: "squire-related-item" });
 
