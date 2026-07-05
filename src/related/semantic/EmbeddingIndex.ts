@@ -100,10 +100,11 @@ export class EmbeddingIndex {
     }
 
     allSimilarities(embedding: EmbeddingVector): Map<string, number> {
-        const results = new Map<string, number>();
-        for (const [path, stored] of this.data) {
-            results.set(path, cosineSimilarityDense(stored, embedding));
-        }
-        return results;
+        return new Map(
+            Array.from(this.data, ([path, stored]) => [
+                path,
+                cosineSimilarityDense(stored, embedding),
+            ]),
+        );
     }
 }
