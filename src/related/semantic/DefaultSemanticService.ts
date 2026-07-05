@@ -3,6 +3,9 @@ import type { SemanticService } from "./SemanticService";
 import type { VaultFileReader, VaultEventSource } from "./vault";
 import { EmbeddingIndex } from "./EmbeddingIndex";
 import { stripMarkdown } from "../text";
+
+const INDEX_BATCH = 15;
+
 type EventRegistrar = (event: unknown) => void;
 type Notifier = (message: string) => void;
 
@@ -48,22 +51,18 @@ export class DefaultSemanticService implements SemanticService {
 
         const files = this.reader.getMarkdownFiles();
         const total = files.length;
+        let indexed = 0;
 
-        for (let i = 0; i < total; i++) {
-            const file = files[i];
-            if (this.index.has(file.path)) {
-                continue;
+        for (let i = 0; i < total; i += INDEX_BATCH) {
+            const batch = files.slice(i, i + INDEX_BATCH);
+            const unindexed = batch.filter(f => !this.index.has(f.path));
+            if (unindexed.length > 0) {
+                await Promise.allSettled(unindexed.map(f => this.indexFile(f.path)));
+                indexed += unindexed.length;
             }
-            try {
-                await this.indexFile(file.path);
-            } catch {
-                // skip files that fail to read
-            }
-            if (i % 5 === 0) {
-                await new Promise(r => setTimeout(r, 0));
-            }
-            if (i % 10 === 0 && i > 0) {
-                this.notify(`Indexing notes for semantic search: ${i}/${total}`);
+            await new Promise(r => setTimeout(r, 0));
+            if (indexed > 0 && indexed % 10 === 0) {
+                this.notify(`Indexing notes for semantic search: ${indexed}/${total}`);
             }
         }
 
