@@ -55,7 +55,7 @@ export class DefaultSemanticService implements SemanticService {
             (_, i) => files.slice(i * batchSize, (i + 1) * batchSize),
         );
 
-        const indexed = await batches.reduce<Promise<number>>(
+        await batches.reduce<Promise<number>>(
             async (acc, batch) => {
                 const indexedSoFar = await acc;
                 const unindexed = batch.filter(f => !this.index.has(f.path));
