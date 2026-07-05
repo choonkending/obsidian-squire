@@ -1,7 +1,7 @@
 import esbuild from "esbuild";
 import process from "process";
 import { builtinModules } from "node:module";
-import { copyFileSync, existsSync, readFileSync } from "fs";
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from "fs";
 import { resolve } from "path";
 
 const prod = (process.argv[2] === "production");
@@ -25,6 +25,12 @@ const wasmCopyPlugin = {
 				} else {
 					console.warn(`WASM file not found: ${src}`);
 				}
+			}
+			const jsepDest = resolve(destDir, "ort-wasm-simd-threaded.jsep.mjs");
+			if (existsSync(jsepDest)) {
+				const patched = readFileSync(jsepDest, "utf-8")
+					.replace(/globalThis\.process\?\.versions\?\.node/g, "false");
+				writeFileSync(jsepDest, patched);
 			}
 		});
 	},
@@ -60,6 +66,37 @@ const transformersWebPlugin = {
 	},
 };
 
+const inlineWorkerPlugin = {
+	name: "inline-worker",
+	setup(build) {
+		build.onResolve({ filter: /\.worker$/ }, (args) => ({
+			path: resolve(args.resolveDir, args.path),
+			namespace: "worker",
+		}));
+		build.onLoad({ filter: /indexer\.worker$/, namespace: "worker" }, async (args) => {
+			const result = await esbuild.build({
+				entryPoints: [args.path],
+				bundle: true,
+				format: "iife",
+				target: "es2020",
+				minify: prod,
+				external: ["obsidian", "electron"],
+				plugins: [transformersWebPlugin],
+				write: false,
+			});
+			const code = result.outputFiles[0].text;
+			return {
+				contents: [
+					`var _workerCode = ${JSON.stringify(code)};`,
+					`var _blob = new Blob([_workerCode], { type: "application/javascript" });`,
+					`export var workerUrl = URL.createObjectURL(_blob);`,
+				].join("\n"),
+				loader: "js",
+			};
+		});
+	},
+};
+
 const context = await esbuild.context({
 	entryPoints: ["main.ts"],
 	bundle: true,
@@ -86,7 +123,7 @@ const context = await esbuild.context({
 	treeShaking: true,
 	outfile: "main.js",
 	minify: prod,
-	plugins: [wasmCopyPlugin, transformersWebPlugin],
+	plugins: [wasmCopyPlugin, transformersWebPlugin, inlineWorkerPlugin],
 });
 
 if (prod) {

@@ -15,12 +15,13 @@ import {
 } from './related';
 import type { SemanticService, VaultFileReader, EmbeddingEngine } from './related/semantic';
 import {
-    createTransformersEngine,
+    WorkerEmbeddingEngine,
     EmbeddingIndex,
     DefaultSemanticService,
     NullSemanticService,
 } from './related/semantic';
 import { DiskCache } from './related/semantic/DiskCache';
+import { workerUrl } from './related/semantic/indexer.worker';
 
 export default class SquirePlugin extends Plugin {
     settings: SquireSettings;
@@ -76,11 +77,24 @@ export default class SquirePlugin extends Plugin {
             return new NullSemanticService();
         }
 
-        const index = new EmbeddingIndex(this.app.vault.adapter, `${this.app.vault.configDir}/squire-embedding-index.json`);
+        const indexPath = `${this.manifest.dir}/squire-embedding-index.json`;
+        const index = new EmbeddingIndex(this.app.vault.adapter, indexPath);
+        await this.migrateEmbeddingIndex();
+
         let engine: EmbeddingEngine;
         try {
             const pluginDir = this.manifest.dir ?? "";
-            engine = await createTransformersEngine(pluginDir, this.app.vault.adapter, this.settings.semanticModelId, onProgress);
+            const adapter = this.app.vault.adapter;
+            const wasmBuffer = await adapter.readBinary(`${pluginDir}/ort-wasm-simd-threaded.jsep.wasm`);
+            const jsepBuffer = await adapter.readBinary(`${pluginDir}/ort-wasm-simd-threaded.jsep.mjs`);
+            const onnxJsExecutionProviderSource = new TextDecoder().decode(jsepBuffer);
+            const worker = new Worker(workerUrl);
+            engine = new WorkerEmbeddingEngine(
+                new Uint8Array(wasmBuffer),
+                onnxJsExecutionProviderSource,
+                this.settings.semanticModelId,
+                worker,
+            );
         } catch (e) {
             new Notice(`Semantic search unavailable: ${e instanceof Error ? e.message : e}; falling back to TF-IDF`);
             this.settings.semanticModelId = '';
@@ -216,15 +230,15 @@ export default class SquirePlugin extends Plugin {
                 const copiedFile = await this.app.vault.copy(file, newPath);
                 if (copiedFile instanceof TFile) {
                     await this.app.workspace.getLeaf().openFile(copiedFile);
-                    new Notice("Duplicated note created: " + copiedFile.path);
+                    new Notice("Squired note created: " + copiedFile.path);
                 } else {
-                    new Notice("Duplication failed: unable to create file.");
+                    new Notice("Squiring failed: unable to create file.");
                 }
             } catch(error) {
-                new Notice(`Duplication failed due to ${error}`);
+                new Notice(`Squiring failed due to ${error}`);
             }
         } else {
-            new Notice(`Duplication failed: ${result.reason}`);
+            new Notice(`Squiring failed: ${result.reason}`);
         }
     }
 
@@ -262,13 +276,8 @@ export default class SquirePlugin extends Plugin {
                 return;
             }
 
-            const cache = new DiskCache(this.app.vault.adapter, this.manifest.dir ?? "");
-            const cached = await cache.isCached(this.settings.semanticModelId);
-
-            if (!cached) {
-                this.setStatus("Downloading model: 0%");
-                new Notice("Switching model; downloading…");
-            }
+            this.setStatus("Loading model…");
+            new Notice("Switching model…");
 
             const svc = await this.initSemanticService(onProgress);
 
@@ -291,6 +300,15 @@ export default class SquirePlugin extends Plugin {
         const cache = new DiskCache(this.app.vault.adapter, this.manifest.dir);
         await cache.clearAll();
         new Notice("Model cache cleared.");
+    }
+
+    private async migrateEmbeddingIndex(): Promise<void> {
+        const oldIndexPath = `${this.app.vault.configDir}/squire-embedding-index.json`;
+        try {
+            if (await this.app.vault.adapter.exists(oldIndexPath)) {
+                await this.app.vault.adapter.remove(oldIndexPath);
+            }
+        } catch { /* skip */ }
     }
 
     async saveSettings() {

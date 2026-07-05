@@ -3,6 +3,9 @@ import type { SemanticService } from "./SemanticService";
 import type { VaultFileReader, VaultEventSource } from "./vault";
 import { EmbeddingIndex } from "./EmbeddingIndex";
 import { stripMarkdown } from "../text";
+
+const INDEX_BATCH = 15;
+
 type EventRegistrar = (event: unknown) => void;
 type Notifier = (message: string) => void;
 
@@ -41,38 +44,39 @@ export class DefaultSemanticService implements SemanticService {
     }
 
     private async warmup(): Promise<void> {
-        if (this.ready || this.building) {
-            return;
-        }
+        if (this.ready || this.building) return;
         this.building = true;
 
         const files = this.reader.getMarkdownFiles();
         const total = files.length;
+        const batchSize = INDEX_BATCH;
+        const batches = Array.from(
+            { length: Math.ceil(total / batchSize) },
+            (_, i) => files.slice(i * batchSize, (i + 1) * batchSize),
+        );
 
-        for (let i = 0; i < total; i++) {
-            const file = files[i];
-            if (this.index.has(file.path)) {
-                continue;
-            }
-            try {
-                await this.indexFile(file.path);
-            } catch {
-                // skip files that fail to read
-            }
-            if (i % 5 === 0) {
+        const indexed = await batches.reduce<Promise<number>>(
+            async (acc, batch) => {
+                const indexedSoFar = await acc;
+                const unindexed = batch.filter(f => !this.index.has(f.path));
+                if (unindexed.length > 0) {
+                    await Promise.allSettled(unindexed.map(f => this.indexFile(f.path)));
+                }
+                const newIndexed = indexedSoFar + unindexed.length;
+
                 await new Promise(r => setTimeout(r, 0));
-            }
-            if (i % 10 === 0 && i > 0) {
-                this.notify(`Indexing notes for semantic search: ${i}/${total}`);
-            }
-        }
+                if (newIndexed > 0 && newIndexed % 10 === 0) {
+                    this.notify(`Indexing notes for semantic search: ${newIndexed}/${total}`);
+                }
+                return newIndexed;
+            },
+            Promise.resolve(0),
+        );
 
         await this.index.save();
         this.ready = true;
         this.building = false;
-        if (total > 0) {
-            this.notify(`Semantic search index complete: ${total} notes`);
-        }
+        if (total > 0) this.notify(`Semantic search index complete: ${total} notes`);
     }
 
     private async indexFile(path: string): Promise<void> {
