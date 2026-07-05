@@ -84,12 +84,11 @@ export default class SquirePlugin extends Plugin {
             const adapter = this.app.vault.adapter;
             const wasmBuffer = await adapter.readBinary(`${pluginDir}/ort-wasm-simd-threaded.jsep.wasm`);
             const jsepBuffer = await adapter.readBinary(`${pluginDir}/ort-wasm-simd-threaded.jsep.mjs`);
-            const jsepSource = new TextDecoder().decode(jsepBuffer)
-                .replace(/globalThis\.process\?\.versions\?\.node/g, "false");
+            const onnxJsExecutionProviderSource = new TextDecoder().decode(jsepBuffer);
             const worker = new Worker(workerUrl);
             engine = new WorkerEmbeddingEngine(
                 new Uint8Array(wasmBuffer),
-                jsepSource,
+                onnxJsExecutionProviderSource,
                 this.settings.semanticModelId,
                 worker,
             );

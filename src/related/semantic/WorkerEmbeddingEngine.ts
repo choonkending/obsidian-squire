@@ -34,7 +34,7 @@ export class WorkerEmbeddingEngine implements EmbeddingEngine {
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private terminated = false;
 
-  constructor(wasmBinary: Uint8Array, jsepSource: string, modelId: string, worker: Worker, dimension?: number) {
+  constructor(wasmBinary: Uint8Array, onnxJsExecutionProviderSource: string, modelId: string, worker: Worker, dimension?: number) {
     this.dimension = dimension ?? MODELS[modelId]?.dimension ?? 384;
     this.ready = new Promise((resolve, reject) => {
       this.resolveReady = resolve;
@@ -49,7 +49,7 @@ export class WorkerEmbeddingEngine implements EmbeddingEngine {
       {
         type: "INIT",
         wasmBinary: wasmBinary.buffer,
-        jsepSource,
+        onnxJsExecutionProviderSource,
         modelId,
       },
       [wasmBinary.buffer],

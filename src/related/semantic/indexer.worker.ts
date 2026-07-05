@@ -17,7 +17,7 @@ type PipelineFn = (
 interface InitMessage {
   type: "INIT";
   wasmBinary: ArrayBuffer;
-  jsepSource: string;
+  onnxJsExecutionProviderSource: string;
   modelId: string;
 }
 
@@ -55,7 +55,7 @@ async function handleInit(msg: InitMessage): Promise<void> {
   if (env.backends?.onnx?.wasm) {
     env.backends.onnx.wasm.wasmBinary = new Uint8Array(msg.wasmBinary);
     env.backends.onnx.wasm.numThreads = 1;
-    const blob = new Blob([msg.jsepSource], { type: "application/javascript" });
+    const blob = new Blob([msg.onnxJsExecutionProviderSource], { type: "application/javascript" });
     env.backends.onnx.wasm.wasmPaths = { mjs: URL.createObjectURL(blob) };
   }
   env.allowLocalModels = false;
