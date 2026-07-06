@@ -32,4 +32,6 @@ jobs:
           gh release create "$tag" \
             --title="$tag" \
             --draft \
-            main.js manifest.json styles.css
+            main.js manifest.json styles.css \
+            ort-wasm-simd-threaded.jsep.wasm \
+            ort-wasm-simd-threaded.jsep.mjs
