@@ -1,14 +1,13 @@
 import esbuild from "esbuild";
 import process from "process";
 import { builtinModules } from "node:module";
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from "fs";
+import { copyFileSync, existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 
 const prod = (process.argv[2] === "production");
 
 const wasmFiles = [
-	"ort-wasm-simd-threaded.jsep.wasm",
-	"ort-wasm-simd-threaded.jsep.mjs",
+	"ort-wasm-simd-threaded.wasm",
 ];
 
 const wasmCopyPlugin = {
@@ -26,12 +25,25 @@ const wasmCopyPlugin = {
 					console.warn(`WASM file not found: ${src}`);
 				}
 			}
-			const jsepDest = resolve(destDir, "ort-wasm-simd-threaded.jsep.mjs");
-			if (existsSync(jsepDest)) {
-				const patched = readFileSync(jsepDest, "utf-8")
-					.replace(/globalThis\.process\?\.versions\?\.node/g, "false");
-				writeFileSync(jsepDest, patched);
-			}
+		});
+	},
+};
+
+const inlineMjsPlugin = {
+	name: "inline-mjs",
+	setup(build) {
+		build.onResolve({ filter: /^@inline\/wasm-mjs$/ }, (args) => ({
+			path: args.path,
+			namespace: "inline-mjs",
+		}));
+		build.onLoad({ filter: /.*/, namespace: "inline-mjs" }, () => {
+			const mjsPath = resolve("node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs");
+			const content = readFileSync(mjsPath, "utf-8");
+			const patched = content.replace(/globalThis\.process\?\.versions\?\.node/g, "false");
+			return {
+				contents: `export const mjsText = ${JSON.stringify(patched)};`,
+				loader: "js",
+			};
 		});
 	},
 };
@@ -123,7 +135,7 @@ const context = await esbuild.context({
 	treeShaking: true,
 	outfile: "main.js",
 	minify: prod,
-	plugins: [wasmCopyPlugin, transformersWebPlugin, inlineWorkerPlugin],
+	plugins: [wasmCopyPlugin, inlineMjsPlugin, transformersWebPlugin, inlineWorkerPlugin],
 });
 
 if (prod) {

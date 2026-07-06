@@ -1,4 +1,4 @@
-import { Notice, Plugin, TAbstractFile, TFile, debounce, EventRef } from 'obsidian';
+import { Notice, Plugin, TAbstractFile, TFile, debounce, EventRef, requestUrl } from 'obsidian';
 import config from './config';
 import type { SquireSettings } from './types';
 import type { TransformResult } from './transformers';
@@ -22,6 +22,7 @@ import {
 } from './related/semantic';
 import { DiskCache } from './related/semantic/DiskCache';
 import { workerUrl } from './related/semantic/indexer.worker';
+import { mjsText } from "@inline/wasm-mjs";
 
 export default class SquirePlugin extends Plugin {
     settings: SquireSettings;
@@ -85,13 +86,22 @@ export default class SquirePlugin extends Plugin {
         try {
             const pluginDir = this.manifest.dir ?? "";
             const adapter = this.app.vault.adapter;
-            const wasmBuffer = await adapter.readBinary(`${pluginDir}/ort-wasm-simd-threaded.jsep.wasm`);
-            const jsepBuffer = await adapter.readBinary(`${pluginDir}/ort-wasm-simd-threaded.jsep.mjs`);
-            const onnxJsExecutionProviderSource = new TextDecoder().decode(jsepBuffer);
+            const wasmPath = `${pluginDir}/ort-wasm-simd-threaded.wasm`;
+            let wasmBuffer: ArrayBuffer;
+            try {
+                wasmBuffer = await adapter.readBinary(wasmPath);
+            } catch {
+                // eslint-disable-next-line obsidianmd/ui/sentence-case
+                new Notice("Downloading Squire WASM assets");
+                const url = `https://github.com/choonkending/obsidian-squire/releases/download/${this.manifest.version}/ort-wasm-simd-threaded.wasm`;
+                const resp = await requestUrl({ url });
+                wasmBuffer = resp.arrayBuffer;
+                await adapter.writeBinary(wasmPath, wasmBuffer);
+            }
             const worker = new Worker(workerUrl);
             engine = new WorkerEmbeddingEngine(
                 new Uint8Array(wasmBuffer),
-                onnxJsExecutionProviderSource,
+                mjsText,
                 this.settings.semanticModelId,
                 worker,
             );

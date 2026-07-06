@@ -33,5 +33,4 @@ jobs:
             --title="$tag" \
             --draft \
             main.js manifest.json styles.css \
-            ort-wasm-simd-threaded.jsep.wasm \
-            ort-wasm-simd-threaded.jsep.mjs
+            ort-wasm-simd-threaded.wasm
