@@ -91,8 +91,7 @@ export default class SquirePlugin extends Plugin {
             try {
                 wasmBuffer = await adapter.readBinary(wasmPath);
             } catch {
-                // eslint-disable-next-line obsidianmd/ui/sentence-case
-                new Notice("Downloading Squire WASM assets");
+                new Notice("Downloading wasm assets");
                 const url = `https://github.com/choonkending/obsidian-squire/releases/download/${this.manifest.version}/ort-wasm-simd-threaded.wasm`;
                 const resp = await requestUrl({ url });
                 wasmBuffer = resp.arrayBuffer;

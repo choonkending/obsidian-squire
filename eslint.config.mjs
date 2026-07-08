@@ -14,8 +14,7 @@ export default defineConfig([
       parserOptions: { project: "./tsconfig.json" },
       globals: {
         console: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
+        window: 'readonly',
         crypto: 'readonly',
         Worker: 'readonly',
         MessageEvent: 'readonly',
@@ -23,7 +22,7 @@ export default defineConfig([
         URL: 'readonly',
         Blob: 'readonly',
       },
-    }
+    },
   },
   {
     files: ["**/*.worker.ts"],

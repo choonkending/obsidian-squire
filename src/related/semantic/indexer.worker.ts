@@ -66,35 +66,35 @@ async function handleInit(msg: InitMessage): Promise<void> {
       device: BACKEND_DEVICE,
     })) as unknown as PipelineFn;
   } catch (err) {
-    globalThis.postMessage({
+    self.postMessage({
       type: "ERROR",
       id: "init",
       error: `Pipeline error: ${err instanceof Error ? err.message : String(err)}`,
     });
     return;
   }
-  globalThis.postMessage({ type: "READY" });
+  self.postMessage({ type: "READY" });
 }
 
 async function handleCompute(msg: ComputeMessage): Promise<void> {
   if (!extractor) {
-    globalThis.postMessage({ type: "ERROR", id: msg.id, error: "Worker not initialized" });
+    self.postMessage({ type: "ERROR", id: msg.id, error: "Worker not initialized" });
     return;
   }
   try {
     const result = await extractor(msg.text, { pooling: "mean", normalize: true });
-    globalThis.postMessage(
+    self.postMessage(
       { type: "RESULT", id: msg.id, data: result.data },
       { transfer: [result.data.buffer] },
     );
   } catch (e) {
-    globalThis.postMessage({ type: "ERROR", id: msg.id, error: String(e) });
+    self.postMessage({ type: "ERROR", id: msg.id, error: String(e) });
   }
 }
 
 async function handleComputeBatch(msg: ComputeBatchMessage): Promise<void> {
   if (!extractor) {
-    globalThis.postMessage({ type: "ERROR_BATCH", error: "Worker not initialized" });
+    self.postMessage({ type: "ERROR_BATCH", error: "Worker not initialized" });
     return;
   }
   try {
@@ -107,8 +107,8 @@ async function handleComputeBatch(msg: ComputeBatchMessage): Promise<void> {
       buffers.push(slice.buffer);
       return { id: item.id, data: slice };
     });
-    globalThis.postMessage({ type: "RESULT_BATCH", results }, { transfer: buffers });
+    self.postMessage({ type: "RESULT_BATCH", results }, { transfer: buffers });
   } catch (e) {
-    globalThis.postMessage({ type: "ERROR_BATCH", error: String(e) });
+    self.postMessage({ type: "ERROR_BATCH", error: String(e) });
   }
 }
