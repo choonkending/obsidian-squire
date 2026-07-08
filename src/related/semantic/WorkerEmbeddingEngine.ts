@@ -31,7 +31,7 @@ export class WorkerEmbeddingEngine implements EmbeddingEngine {
   private rejectReady!: (err: Error) => void;
   private pending = new Map<string, PendingCall>();
   private batch: BatchItem[] = [];
-  private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private flushTimer: ReturnType<Window['setTimeout']> | null = null;
   private terminated = false;
 
   constructor(wasmBinary: Uint8Array, onnxJsExecutionProviderSource: string, modelId: string, worker: Worker, dimension?: number) {
@@ -66,7 +66,7 @@ export class WorkerEmbeddingEngine implements EmbeddingEngine {
       if (this.batch.length >= BATCH_SIZE) {
         this.flushBatch();
       } else if (!this.flushTimer) {
-        this.flushTimer = setTimeout(() => this.flushBatch(), FLUSH_DELAY_MS);
+        this.flushTimer = window.setTimeout(() => this.flushBatch(), FLUSH_DELAY_MS);
       }
     });
   }
@@ -74,7 +74,7 @@ export class WorkerEmbeddingEngine implements EmbeddingEngine {
   terminate(): void {
     this.terminated = true;
     if (this.flushTimer) {
-      clearTimeout(this.flushTimer);
+      window.clearTimeout(this.flushTimer);
       this.flushTimer = null;
     }
     this.worker.terminate();
@@ -82,7 +82,7 @@ export class WorkerEmbeddingEngine implements EmbeddingEngine {
 
   private flushBatch(): void {
     if (this.flushTimer) {
-      clearTimeout(this.flushTimer);
+      window.clearTimeout(this.flushTimer);
       this.flushTimer = null;
     }
     if (this.batch.length === 0) return;

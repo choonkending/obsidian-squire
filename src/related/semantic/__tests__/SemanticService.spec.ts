@@ -1,3 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import { DefaultSemanticService } from "../DefaultSemanticService";
 import type { VaultFileReader, VaultEventSource } from "../vault";
 import type { DataAdapter } from "../EmbeddingIndex";
