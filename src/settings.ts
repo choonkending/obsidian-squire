@@ -42,7 +42,59 @@ export class SquireSettingsTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        new Setting(containerEl).setName("Index numbering").setHeading();
+        new Setting(containerEl).setName("Related notes").setHeading();
+
+        new Setting(containerEl)
+            .setName("Show sidebar on startup")
+            .setDesc("Automatically open the related notes sidebar when Obsidian starts.")
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.showRelatedNotesSidebar)
+                .onChange(async (value) => {
+                    this.plugin.settings.showRelatedNotesSidebar = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Number of suggestions")
+            .setDesc("How many related notes to show (1-50).")
+            .addText(text => text
+                .setPlaceholder(String(DEFAULT_RESULT_LIMIT))
+                .setValue(String(this.plugin.settings.relatedNotesLimit))
+                .onChange(async (value) => {
+                    this.plugin.settings.relatedNotesLimit = normalizeResultLimit(value);
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName("Scorer")
+            .setDesc("Use tf-idf for lexical scoring only, or select a model for hybrid tf-idf and semantic embedding scoring")
+            .addDropdown(dropdown => {
+                dropdown.addOption('', 'Tf-idf (lexical only)');
+                for (const model of Object.values(MODELS)) {
+                    dropdown.addOption(model.id, model.label);
+                }
+                dropdown.setValue(this.plugin.settings.semanticModelId)
+                .onChange(async (value) => {
+                    this.plugin.settings.semanticModelId = value;
+                    await this.plugin.saveSettings();
+                });
+            });
+
+        this.addWeightSetting(containerEl, "Word match weight", "How strongly word similarity affects results. Higher values favour notes with similar vocabulary.", DEFAULT_WEIGHTS.words, () => this.plugin.settings.weightWords, v => this.plugin.settings.weightWords = v);
+        this.addWeightSetting(containerEl, "Tag match weight", "How strongly shared tags affect results. Higher values favour notes with the same topic labels.", DEFAULT_WEIGHTS.tags, () => this.plugin.settings.weightTags, v => this.plugin.settings.weightTags = v);
+        this.addWeightSetting(containerEl, "Link match weight", "How strongly shared outgoing links affect results. Higher values favour notes linking to the same pages.", DEFAULT_WEIGHTS.links, () => this.plugin.settings.weightLinks, v => this.plugin.settings.weightLinks = v);
+
+        new Setting(containerEl)
+            .setName("Rebuild everything")
+            .setDesc("Clears all cached model files and computed embeddings, then re-indexes your vault from scratch. This may take several minutes for large vaults and requires a one-time model download.")
+            .addButton(button => button
+                .setButtonText("Rebuild")
+                .setWarning()
+                .onClick(async () => {
+                    await this.plugin.rebuildEverything();
+                }));
+
+        new Setting(containerEl).setName("File management").setHeading();
 
         new Setting(containerEl)
             .setName("Index separator")
@@ -63,49 +115,6 @@ export class SquireSettingsTab extends PluginSettingTab {
                         this.plugin.settings.indexSeparator = value;
                     }
                     await this.plugin.saveSettings();
-                }));
-
-        new Setting(containerEl).setName("Related notes").setHeading();
-
-        new Setting(containerEl)
-            .setName("Number of suggestions")
-            .setDesc("How many related notes to show (1-50).")
-            .addText(text => text
-                .setPlaceholder(String(DEFAULT_RESULT_LIMIT))
-                .setValue(String(this.plugin.settings.relatedNotesLimit))
-                .onChange(async (value) => {
-                    this.plugin.settings.relatedNotesLimit = normalizeResultLimit(value);
-                    await this.plugin.saveSettings();
-                }));
-
-        this.addWeightSetting(containerEl, "Word match weight", "How strongly word similarity affects results. Higher values favour notes with similar vocabulary.", DEFAULT_WEIGHTS.words, () => this.plugin.settings.weightWords, v => this.plugin.settings.weightWords = v);
-        this.addWeightSetting(containerEl, "Tag match weight", "How strongly shared tags affect results. Higher values favour notes with the same topic labels.", DEFAULT_WEIGHTS.tags, () => this.plugin.settings.weightTags, v => this.plugin.settings.weightTags = v);
-        this.addWeightSetting(containerEl, "Link match weight", "How strongly shared outgoing links affect results. Higher values favour notes linking to the same pages.", DEFAULT_WEIGHTS.links, () => this.plugin.settings.weightLinks, v => this.plugin.settings.weightLinks = v);
-
-        new Setting(containerEl).setName("Similarity scoring").setHeading();
-
-        new Setting(containerEl)
-            .setName("Scorer")
-            .setDesc("Use tf-idf for lexical scoring only, or select a model for hybrid tf-idf and semantic embedding scoring")
-            .addDropdown(dropdown => {
-                dropdown.addOption('', 'Tf-idf (lexical only)');
-                for (const model of Object.values(MODELS)) {
-                    dropdown.addOption(model.id, model.label);
-                }
-                dropdown.setValue(this.plugin.settings.semanticModelId)
-                .onChange(async (value) => {
-                    this.plugin.settings.semanticModelId = value;
-                    await this.plugin.saveSettings();
-                });
-            })
-
-        new Setting(containerEl)
-            .setName("Clear model cache")
-            .setDesc("Delete downloaded model files to free up disk space.")
-            .addButton(button => button
-                .setButtonText("Clear cache")
-                .onClick(async () => {
-                    await this.plugin.clearModelCache();
                 }));
     }
 

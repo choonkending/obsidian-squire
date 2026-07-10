@@ -304,11 +304,25 @@ export default class SquirePlugin extends Plugin {
         }
     }
 
-    async clearModelCache(): Promise<void> {
-        if (!this.manifest.dir) return;
-        const cache = new DiskCache(this.app.vault.adapter, this.manifest.dir);
-        await cache.clearAll();
-        new Notice("Model cache cleared.");
+    async rebuildEverything(onProgress?: (pct: number) => void): Promise<void> {
+        if (this.loadingModel) {
+            new Notice("Already rebuilding. Please wait.");
+            return;
+        }
+        if (this.manifest.dir) {
+            const cache = new DiskCache(this.app.vault.adapter, this.manifest.dir);
+            await cache.clearAll();
+            const indexPath = `${this.manifest.dir}/squire-embedding-index.json`;
+            try {
+                await this.app.vault.adapter.remove(indexPath);
+            } catch { /* file may not exist */ }
+        }
+        if (!this.settings.semanticModelId) {
+            new Notice("Cache cleared. Select a scorer to enable semantic search.");
+            return;
+        }
+        this.currentModelId = '';
+        await this.reinitSemanticService(onProgress);
     }
 
     private async migrateEmbeddingIndex(): Promise<void> {
