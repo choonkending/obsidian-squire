@@ -2,100 +2,85 @@
 
 [![Release Obsidian plugin](https://github.com/choonkending/obsidian-squire/actions/workflows/release.yml/badge.svg)](https://github.com/choonkending/obsidian-squire/actions/workflows/release.yml) ![GitHub Release](https://img.shields.io/github/v/release/choonkending/obsidian-squire)
 
-**Your faithful note-taking companion.** Squire automates index numbering and surfaces related notes so you can stay in your flow state. No manual calculation, no hunting for connections.
-
-### ✨ Features
-- **Smart Index Numbering:** Automatically generate the new note's prefix (incrementing or nesting numbers) while leaving the title blank for you to instantly type the new subject. Right-click or command palette to duplicate.
-- **Related Notes:** Automatically surface connected notes via word, tag, and link similarity, with an optional semantic embedding engine for deeper content understanding — no manual searching required.
+**Your faithful note-taking companion.** Squire surfaces related notes and automates file naming so you can stay in flow. Each feature is independent — use one, two, or all three.
 
 ---
 
-## 🎯 Why Squire? (The Problem)
+## 🔗 Related Notes
 
-Every action that breaks your typing flow — calculating the next index number, manually hunting for related notes — adds micro-friction that pulls you out of deep work.
+*Manually hunting for connections between notes interrupts your thinking. Squire automatically surfaces related notes using lexical scoring — no tagging tax, no manual cross-referencing.*
 
-If you use a structural note-taking framework like the [Zettelkasten Method](https://www.atlassian.com/blog/productivity/zettelkasten-method), you likely rely on a strict naming or numbering convention. As your vault grows, manually copying, pasting, and calculating the next index number becomes tedious.
+**Zero configuration.** Related notes work immediately using TF-IDF word overlap, shared tags, and outgoing link similarity.
 
-Squire removes this friction on two fronts: it automates index numbering so you never do mental arithmetic, and it surfaces related notes so you never hunt for connections.
+**Sidebar view:** Opens a persistent panel that auto-refreshes as you switch notes. An algorithm badge in the header shows which scorer is active (TF‑IDF / Hybrid). Click a result to open it; click **Link** to insert `[[Title]]` at your cursor.
 
-### Example Workflow
-Imagine you use a simple numeric index for your notes:
+**Quick modal:** `Ctrl/Cmd+P` → **Show related notes** for a one-off lookup without changing your layout. Filter by typing.
 
-```text
-📂 Literature_Notes
- └── 📄 1 - Biology.md
-```
+**Ribbon icon:** The network icon toggles the sidebar view. The sidebar's open/closed state persists across Obsidian sessions.
 
-If you want to create a new, unrelated note (e.g., Physics), you need to increment the number:
+**Match weights** in Settings let you dial how much words, tags, and links influence results. Set any weight to `0` to disable that signal.
 
-```text
-📂 Literature_Notes
- ├── 📄 1 - Biology.md
- └── 📄 2 - Physics.md
-```
+### 🧠 Semantic Search (Optional)
 
-If you want to create a child note related to Biology (e.g., Anatomy), you need to nest the number:
+*Experimental. Adds dense-embedding understanding so notes with different wording but the same meaning still surface.*
 
-```text
-📂 Literature_Notes
- ├── 📄 1 - Biology.md
- └── 📄 1.1 - Anatomy.md
-```
+Select a transformer model in **Settings → Related Notes → Scorer**. The model downloads on first use and is cached. The first indexing pass on a large vault may take several minutes.
 
-## 🚀 Smart Index Numbering
+When a model is active, Squire combines TF‑IDF and dense-embedding cosine similarity into a single hybrid score. Switch back to lexical-only any time by selecting **Tf-idf (lexical only)**.
+
+**Rebuild everything** in Settings clears all cached model files and computed embeddings, then re-indexes your vault from scratch.
+
+---
+
+## 🗂 File Management
 
 *No mental arithmetic. No manual formatting. Just pick the command and type your subject.*
 
 Right-click a note in the File Explorer and select **Duplicate: Increment Last Number** or **Duplicate: Nest Last Number**, or open the Command Palette (`Ctrl/Cmd+P`) and run the same commands. The new note appears in the same folder with the correctly computed prefix.
 
-Transformers dictate how the new note's name is generated. (Note: The transformers intentionally leave the text after the number blank so you can immediately type your new topic).
+The **Index separator** setting defines the character between your index number and title (default `-`).
 
-> [!TIP]
-> Have a unique naming convention? Please feel free to raise an issue or contribute a new transformer for your specific use case!
-
-### 1. Increment Last Number
-Finds the last number in your current note's title and increases it by 1. If no number is found, it appends a 1 to the end.
+### Increment Last Number
+Finds the last number in your current note's title and increases it by 1.
 
 - `1 - Biology.md` → `2 - .md`
 - `100 - Artificial Intelligence.md` → `101 - .md`
 
-### 2. Nest Last Number
-Adds a new sub-level number after the last decimal at the end of the note's index, nesting it one level deeper.
+### Nest Last Number
+Adds a new sub-level after the last decimal in the note's index.
 
 - `1 - Biology.md` → `1.1 - .md`
 - `1.1 - Anatomy.md` → `1.1.1 - .md`
 
-## 🔗 Related Notes
+> [!TIP]
+> Have a unique naming convention? Raise an issue or contribute a new transformer.
 
-*Manually hunting for connections between notes interrupts your thinking. Squire automatically surfaces related notes using lexical scoring — no tagging tax, no manual cross-referencing. Optionally, add semantic understanding by selecting a Transformer model in Settings.*
-
-**Sidebar view:** Opens a persistent panel that auto-refreshes as you switch notes. An algorithm badge in the header shows which scorer is active (TF‑IDF / Hybrid). Click a result to open it; click **Link** to insert `[[Title]]` at your cursor.
-
-**Quick modal:** `Ctrl/Cmd+P` → **Show related notes** for a one-off look without changing your layout. Filter by typing.
-
-**Ribbon icon:** The network icon toggles the sidebar view. The sidebar's open/closed state persists across Obsidian sessions.
-
-**Hybrid scoring:** When a model is selected, Squire combines TF‑IDF and dense‑embedding cosine similarity into a single relevance score — so notes that use different words but share the same meaning still surface.
+---
 
 ## ⚙️ Settings
 
-*Tune Squire to match your workflow without breaking your stride.*
+| Setting | Feature | Description |
+|---|---|---|
+| Show sidebar on startup | Related Notes | Auto-open the related notes sidebar |
+| Number of suggestions | Related Notes | How many results to show (1–50) |
+| Scorer | Related Notes — Scoring | TF‑IDF (lexical) or hybrid semantic model |
+| Word match weight | Related Notes | How strongly word similarity affects results (default: 1) |
+| Tag match weight | Related Notes | How strongly shared tags affect results (default: 0.5) |
+| Link match weight | Related Notes | How strongly shared outgoing links affect results (default: 0.5) |
+| Rebuild everything | Related Notes — Scoring | Clear caches + re-index vault |
+| Index separator | File Management | Character between number and title |
 
-**Index separator** — the character(s) between your index number and title (e.g. `-` in `1 - Biology.md`). Must be safe for file names, max 5 characters.
-
-**Number of suggestions** — how many related notes to return (1–50, default 5).
-
-**Similarity scoring** — choose **TF‑IDF (lexical only)** or select a Transformer model for hybrid semantic + lexical scoring. Models are downloaded on first use and cached in the plugin folder. Switch back to TF‑IDF any time by selecting the default.
-
-**Match weights** — control how much word overlap, shared tags, and shared outgoing links influence similarity. Defaults: Words `1.0`, Tags `0.5`, Links `0.5`. Set to `0` to disable a signal.
+---
 
 ## 📦 Installation
 
 1. Find Squire in [Obsidian Community Plugins](https://community.obsidian.md/plugins/squire)
 2. Select "Add to Obsidian"
 
+---
+
 ## 🤝 Contributing & Support
 
-I accept Pull Requests, GitHub Issues, and general feedback! If you have a specific use case or transformer idea, please look at contributing to help make Squire better for everyone.
+Pull requests, issues, and feedback welcome! If you have a specific naming convention or feature idea, feel free to contribute.
 
-Funding: If you find this plugin useful and it saves you time, just let me know—hearing how it helps your workflow is greatly appreciated!
+Funding: If Squire saves you time, hearing how it helps is greatly appreciated!

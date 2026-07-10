@@ -3,7 +3,7 @@
 	"name": "Squire",
 	"version": "0.5.4",
 	"minAppVersion": "1.12.0",
-	"description": "Your faithful note-taking companion. Automates file title naming, and finds related notes so you can stay in the flow.",
+	"description": "Your faithful note-taking companion. Finds related notes (lexical + optional semantic), and automates file naming so you can stay in the flow.",
 	"author": "choonkending",
 	"authorUrl": "https://github.com/choonkending",
 	"fundingUrl": "https://github.com/sponsors/choonkending/",
