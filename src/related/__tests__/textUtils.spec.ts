@@ -6,6 +6,7 @@ import {
     cosineSimilarityDense,
     jaccardSimilarity,
 } from "../text";
+import { computeInverseDocumentFrequencies, applyInverseDocumentFrequency } from "../text/inverseDocumentFrequency";
 
 describe("textUtils", () => {
     describe("stripMarkdown", () => {
@@ -151,6 +152,80 @@ describe("textUtils", () => {
         it("returns 0 when magnitude is zero", () => {
             expect(cosineSimilarityDense([0, 0], [1, 0])).toBe(0);
             expect(cosineSimilarityDense([1, 0], [0, 0])).toBe(0);
+        });
+    });
+
+    describe("computeInverseDocumentFrequencies", () => {
+        it("returns empty map for empty doc list", () => {
+            const result = computeInverseDocumentFrequencies([]);
+            expect(result.size).toBe(0);
+        });
+
+        it("returns 1 for every term in a single document", () => {
+            const docs = [new Map([["a", 1], ["b", 2]])];
+            const result = computeInverseDocumentFrequencies(docs);
+            expect(result.get("a")).toBeCloseTo(1, 5);
+            expect(result.get("b")).toBeCloseTo(1, 5);
+        });
+
+        it("returns higher inverse document frequency for rarer terms", () => {
+            const hasThe = new Map([["the", 1]]);
+            const hasBoth = new Map([["the", 3], ["neural", 1]]);
+            const hasTheToo = new Map([["the", 2]]);
+            const result = computeInverseDocumentFrequencies([hasThe, hasBoth, hasTheToo]);
+            expect(result.get("neural")).toBeGreaterThan(result.get("the")!);
+        });
+
+        it("returns 1 for terms appearing in all documents", () => {
+            const docs = [
+                new Map([["term", 1]]),
+                new Map([["term", 3], ["other", 1]]),
+            ];
+            const result = computeInverseDocumentFrequencies(docs);
+            expect(result.get("term")).toBeCloseTo(1, 5);
+        });
+
+        it("computes correct inverse document frequencies for mixed frequencies", () => {
+            const docs = [
+                new Map([["a", 1], ["b", 1]]),
+                new Map([["a", 1], ["c", 1]]),
+                new Map([["a", 1], ["d", 1]]),
+            ];
+            const result = computeInverseDocumentFrequencies(docs);
+            expect(result.get("a")).toBeCloseTo(1 + Math.log(3 / 3), 5);
+            expect(result.get("b")).toBeCloseTo(1 + Math.log(3 / 1), 5);
+        });
+    });
+
+    describe("applyInverseDocumentFrequency", () => {
+        it("multiplies each term frequency by its inverse document frequency weight", () => {
+            const termFrequency = new Map([["a", 2], ["b", 3]]);
+            const inverseDocumentFrequency = new Map([["a", 1.5], ["b", 2]]);
+            const result = applyInverseDocumentFrequency(termFrequency, inverseDocumentFrequency);
+            expect(result.get("a")).toBeCloseTo(3, 5);
+            expect(result.get("b")).toBeCloseTo(6, 5);
+        });
+
+        it("skips terms not present in inverse document frequency", () => {
+            const termFrequency = new Map([["a", 2], ["b", 3]]);
+            const inverseDocumentFrequency = new Map([["a", 1.5]]);
+            const result = applyInverseDocumentFrequency(termFrequency, inverseDocumentFrequency);
+            expect(result.has("b")).toBe(false);
+            expect(result.get("a")).toBeCloseTo(3, 5);
+        });
+
+        it("returns same reference when inverse document frequency is empty", () => {
+            const termFrequency = new Map([["a", 1]]);
+            const inverseDocumentFrequency = new Map<string, number>();
+            const result = applyInverseDocumentFrequency(termFrequency, inverseDocumentFrequency);
+            expect(result).toBe(termFrequency);
+        });
+
+        it("returns empty map when term frequency is empty", () => {
+            const termFrequency = new Map<string, number>();
+            const inverseDocumentFrequency = new Map([["a", 1.5]]);
+            const result = applyInverseDocumentFrequency(termFrequency, inverseDocumentFrequency);
+            expect(result.size).toBe(0);
         });
     });
 

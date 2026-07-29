@@ -1,4 +1,4 @@
-import { cosineSimilaritySparse, jaccardSimilarity } from "./text";
+import { cosineSimilaritySparse, jaccardSimilarity, computeInverseDocumentFrequencies, applyInverseDocumentFrequency } from "./text";
 import type { NoteDoc, RelatedResult, RelatedWeights } from "./types";
 
 export const DEFAULT_WEIGHTS: RelatedWeights = {
@@ -8,26 +8,12 @@ export const DEFAULT_WEIGHTS: RelatedWeights = {
 };
 
 export default class LexicalEngine {
-    score(
+    private score(
         target: NoteDoc,
         candidate: NoteDoc,
         weights: RelatedWeights = DEFAULT_WEIGHTS
     ): number {
-        const { words, tags, links } = weights;
-        const totalWeight = words + tags + links;
-
-        if (totalWeight <= 0) {
-            return 0;
-        }
-
-        const wordScore = cosineSimilaritySparse(target.tokens, candidate.tokens);
-        const tagScore = jaccardSimilarity(target.tags, candidate.tags);
-        const linkScore = jaccardSimilarity(target.links, candidate.links);
-
-        const weighted =
-            words * wordScore + tags * tagScore + links * linkScore;
-
-        return weighted / totalWeight;
+        return this.makeScorer(target, weights)(candidate);
     }
 
     rank(
@@ -38,11 +24,40 @@ export default class LexicalEngine {
     ): RelatedResult[] {
         if (limit <= 0) return [];
 
+        const inverseDocumentFrequency = computeInverseDocumentFrequencies(
+            [target, ...candidates].map(d => d.tokens)
+        );
+        const scorer = this.makeScorer(target, weights, inverseDocumentFrequency);
+
         return candidates
             .filter(c => c.path !== target.path)
-            .map(c => ({ path: c.path, title: c.title, score: this.score(target, c, weights) }))
+            .map(c => ({ path: c.path, title: c.title, score: scorer(c) }))
             .filter(r => r.score > 0)
             .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title) || a.path.localeCompare(b.path))
             .slice(0, limit);
+    }
+
+    private makeScorer(
+        target: NoteDoc,
+        weights: RelatedWeights,
+        inverseDocumentFrequency: Map<string, number> = new Map()
+    ): (candidate: NoteDoc) => number {
+        const { words, tags, links } = weights;
+        const totalWeight = words + tags + links;
+        const targetWordVector = applyInverseDocumentFrequency(target.tokens, inverseDocumentFrequency);
+
+        return (candidate) => {
+            if (totalWeight <= 0) {
+                return 0;
+            }
+
+            const candidateWordVector = applyInverseDocumentFrequency(candidate.tokens, inverseDocumentFrequency);
+
+            const wordScore = cosineSimilaritySparse(targetWordVector, candidateWordVector);
+            const tagScore = jaccardSimilarity(target.tags, candidate.tags);
+            const linkScore = jaccardSimilarity(target.links, candidate.links);
+
+            return (words * wordScore + tags * tagScore + links * linkScore) / totalWeight;
+        };
     }
 }
