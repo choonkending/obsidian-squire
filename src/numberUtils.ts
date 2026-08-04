@@ -10,7 +10,7 @@ export function extractPrefix(title: string, separator: string): string | null {
     return result[0].trim();
 }
 
-export function getLastSegments(siblingPrefixes: string[], basePrefix: string): number[] {
+export function getLastSegments(siblingPrefixes: Array<string>, basePrefix: string): Array<number> {
     return siblingPrefixes
         .filter(s => {
             if (!s.startsWith(basePrefix)) return false;

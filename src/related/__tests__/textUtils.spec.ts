@@ -10,7 +10,7 @@ import { computeInverseDocumentFrequencies, applyInverseDocumentFrequency } from
 
 describe("textUtils", () => {
     describe("stripMarkdown", () => {
-        const testCases: Array<{ input: string; contains: string[]; excludes: string[] }> = [
+        const testCases: Array<{ input: string; contains: Array<string>; excludes: Array<string> }> = [
             {
                 input: "# Heading\nSome text",
                 contains: ["Heading", "Some text"],
@@ -43,7 +43,7 @@ describe("textUtils", () => {
     });
 
     describe("tokenize", () => {
-        const testCases: Array<{ input: string; output: string[] }> = [
+        const testCases: Array<{ input: string; output: Array<string> }> = [
             {
                 input: "The quick brown fox",
                 output: ["quick", "brown", "fox"],
@@ -74,7 +74,7 @@ describe("textUtils", () => {
     });
 
     describe("termFrequencies", () => {
-        const testCases: Array<{ input: string[]; output: Array<[string, number]> }> = [
+        const testCases: Array<{ input: Array<string>; output: Array<[string, number]> }> = [
             {
                 input: ["a", "b", "a", "c", "a"],
                 output: [["a", 3], ["b", 1], ["c", 1]],
@@ -230,7 +230,7 @@ describe("textUtils", () => {
     });
 
     describe("jaccardSimilarity", () => {
-        const testCases: Array<{ a: string[]; b: string[]; output: number }> = [
+        const testCases: Array<{ a: Array<string>; b: Array<string>; output: number }> = [
             { a: ["x", "y"], b: ["x", "y"], output: 1 },
             { a: ["x", "y"], b: ["a", "b"], output: 0 },
             { a: [], b: [], output: 0 },

@@ -31,7 +31,7 @@ export function cosineSimilaritySparse(
     return dot / (sparseMagnitude(a) * sparseMagnitude(b));
 }
 
-export function cosineSimilarityDense(a: number[], b: number[]): number {
+export function cosineSimilarityDense(a: Array<number>, b: Array<number>): number {
     if (a.length !== b.length || a.length === 0) {
         return 0;
     }

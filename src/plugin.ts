@@ -219,7 +219,7 @@ export default class SquirePlugin extends Plugin {
         this.transformerMenuRef = ref;
     }
 
-    private getNumericPrefixes(file: TAbstractFile): string[] {
+    private getNumericPrefixes(file: TAbstractFile): Array<string> {
         const parent = file.parent;
         if (!parent) return [];
         return parent.children
@@ -228,7 +228,7 @@ export default class SquirePlugin extends Plugin {
             .filter((p): p is string => p !== null && isNumericPrefix(p));
     }
 
-    private async duplicateWithTransform(file: TAbstractFile, transform: (title: string, siblingPrefixes: string[]) => TransformResult) {
+    private async duplicateWithTransform(file: TAbstractFile, transform: (title: string, siblingPrefixes: Array<string>) => TransformResult) {
         const result = transform(file.name, this.getNumericPrefixes(file));
 
         if (result.status === 'SUCCESS') {

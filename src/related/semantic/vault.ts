@@ -1,5 +1,5 @@
 export interface VaultFileReader {
-    getMarkdownFiles(): readonly { path: string; extension: string }[];
+    getMarkdownFiles(): ReadonlyArray<{ path: string; extension: string }>;
     readFile(path: string): Promise<string>;
 }
 

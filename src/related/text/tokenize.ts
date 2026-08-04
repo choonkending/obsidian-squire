@@ -14,7 +14,7 @@ const STOP_WORDS: ReadonlySet<string> = new Set([
 
 const MIN_TOKEN_LENGTH = 2;
 
-export function tokenize(text: string): string[] {
+export function tokenize(text: string): Array<string> {
     if (!text) {
         return [];
     }

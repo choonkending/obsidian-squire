@@ -18,10 +18,10 @@ export default class LexicalEngine {
 
     rank(
         target: NoteDoc,
-        candidates: NoteDoc[],
+        candidates: Array<NoteDoc>,
         limit: number,
         weights: RelatedWeights = DEFAULT_WEIGHTS
-    ): RelatedResult[] {
+    ): Array<RelatedResult> {
         if (limit <= 0) return [];
 
         const inverseDocumentFrequency = computeInverseDocumentFrequencies(

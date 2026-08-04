@@ -10,7 +10,7 @@ function scoreClass(score: number): string {
 export class RelatedNotesModal extends SuggestModal<RelatedResult> {
     constructor(
         app: App,
-        private readonly results: RelatedResult[]
+        private readonly results: Array<RelatedResult>
     ) {
         super(app);
         this.setPlaceholder(
@@ -20,7 +20,7 @@ export class RelatedNotesModal extends SuggestModal<RelatedResult> {
         );
     }
 
-    getSuggestions(query: string): RelatedResult[] {
+    getSuggestions(query: string): Array<RelatedResult> {
         const lowered = query.toLowerCase().trim();
         if (lowered.length === 0) {
             return this.results;

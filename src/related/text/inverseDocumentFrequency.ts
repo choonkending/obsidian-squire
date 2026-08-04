@@ -1,7 +1,7 @@
 import { termFrequencies } from "./termFrequency";
 
 export function computeInverseDocumentFrequencies(
-    documents: Map<string, number>[]
+    documents: Array<Map<string, number>>
 ): Map<string, number> {
     const documentCount = documents.length;
     if (documentCount === 0) return new Map();

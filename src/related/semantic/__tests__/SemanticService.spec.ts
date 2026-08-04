@@ -10,7 +10,7 @@ import { FixedEmbeddingEngine } from "../testHelpers";
 import type { EmbeddingVector } from "../types";
 
 class RecordingEngine extends FixedEmbeddingEngine {
-    calls: string[] = [];
+    calls: Array<string> = [];
 
     async computeEmbedding(text: string): Promise<EmbeddingVector> {
         this.calls.push(text);
@@ -41,12 +41,12 @@ function makeReader(
     };
 }
 
-function makeEvents(): VaultEventSource & { handlers: Map<string, (...args: unknown[]) => void> } {
-    const handlers = new Map<string, (...args: unknown[]) => void>();
+function makeEvents(): VaultEventSource & { handlers: Map<string, (...args: Array<unknown>) => void> } {
+    const handlers = new Map<string, (...args: Array<unknown>) => void>();
     return {
         handlers,
         on: ((event, handler) => {
-            handlers.set(event as string, handler as (...args: unknown[]) => void);
+            handlers.set(event as string, handler as (...args: Array<unknown>) => void);
             return "event-ref";
         }) as VaultEventSource['on'],
     };
