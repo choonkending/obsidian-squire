@@ -10,11 +10,13 @@ export function computeInverseDocumentFrequencies(
         documents.flatMap(document => [...document.keys()])
     );
 
-    const inverseDocumentFrequency = new Map<string, number>();
-    for (const [term, count] of documentFrequencies) {
-        inverseDocumentFrequency.set(term, 1 + Math.log(documentCount / count));
-    }
-    return inverseDocumentFrequency;
+    return new Map(
+        Array.from(
+            documentFrequencies,
+            ([term, documentFrequency]): [string, number] =>
+                [term, 1 + Math.log(documentCount / documentFrequency)]
+        )
+    );
 }
 
 export function applyInverseDocumentFrequency(
@@ -23,12 +25,12 @@ export function applyInverseDocumentFrequency(
 ): Map<string, number> {
     if (inverseDocumentFrequency.size === 0) return termFrequency;
 
-    const result = new Map<string, number>();
-    for (const [term, frequency] of termFrequency) {
-        const weight = inverseDocumentFrequency.get(term);
-        if (weight !== undefined) {
-            result.set(term, frequency * weight);
-        }
-    }
-    return result;
+    return new Map(
+        Array.from(termFrequency).flatMap(
+            ([term, frequency]): Array<[string, number]> => {
+                const weight = inverseDocumentFrequency.get(term);
+                return weight === undefined ? [] : [[term, frequency * weight]];
+            }
+        )
+    );
 }
