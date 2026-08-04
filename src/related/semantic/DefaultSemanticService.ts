@@ -3,6 +3,7 @@ import type { SemanticService } from "./SemanticService";
 import type { VaultFileReader, VaultEventSource } from "./vault";
 import { EmbeddingIndex } from "./EmbeddingIndex";
 import { stripMarkdown } from "../text";
+import { MODELS } from "./models";
 
 const INDEX_BATCH = 15;
 
@@ -13,6 +14,8 @@ export class DefaultSemanticService implements SemanticService {
     private initialized = false;
     private ready = false;
     private building = false;
+    private queryPrefix = "";
+    private passagePrefix = "";
 
     constructor(
         private readonly reader: VaultFileReader,
@@ -26,6 +29,13 @@ export class DefaultSemanticService implements SemanticService {
     async init(modelId: string): Promise<void> {
         this.initialized = true;
         await this.index.load(modelId);
+
+        const model = Object.values(MODELS).find(m => m.id === modelId);
+        if (model) {
+            this.queryPrefix = model.queryPrefix;
+            this.passagePrefix = model.passagePrefix;
+        }
+
         this.registerVaultEvents();
         if (this.index.size > 0) {
             this.ready = true;
@@ -39,7 +49,8 @@ export class DefaultSemanticService implements SemanticService {
             return null;
         }
         const clean = stripMarkdown(queryText);
-        const queryEmbedding = await this.engine.computeEmbedding(clean);
+        const prefixed = this.queryPrefix + clean;
+        const queryEmbedding = await this.engine.computeEmbedding(prefixed);
         return this.index.allSimilarities(queryEmbedding);
     }
 
@@ -82,7 +93,8 @@ export class DefaultSemanticService implements SemanticService {
     private async indexFile(path: string): Promise<void> {
         const text = await this.reader.readFile(path);
         const clean = stripMarkdown(text);
-        const embedding = await this.engine.computeEmbedding(clean);
+        const prefixed = this.passagePrefix + clean;
+        const embedding = await this.engine.computeEmbedding(prefixed);
         this.index.set(path, embedding);
     }
 
