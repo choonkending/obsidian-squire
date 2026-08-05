@@ -7,6 +7,16 @@ import type { VaultFileReader, VaultEventSource } from "../vault";
 import type { DataAdapter } from "../EmbeddingIndex";
 import { EmbeddingIndex } from "../EmbeddingIndex";
 import { FixedEmbeddingEngine } from "../testHelpers";
+import type { EmbeddingVector } from "../types";
+
+class RecordingEngine extends FixedEmbeddingEngine {
+    calls: Array<string> = [];
+
+    async computeEmbedding(text: string): Promise<EmbeddingVector> {
+        this.calls.push(text);
+        return super.computeEmbedding(text);
+    }
+}
 
 class InMemoryAdapter implements DataAdapter {
     private store = new Map<string, string>();
@@ -31,12 +41,12 @@ function makeReader(
     };
 }
 
-function makeEvents(): VaultEventSource & { handlers: Map<string, (...args: unknown[]) => void> } {
-    const handlers = new Map<string, (...args: unknown[]) => void>();
+function makeEvents(): VaultEventSource & { handlers: Map<string, (...args: Array<unknown>) => void> } {
+    const handlers = new Map<string, (...args: Array<unknown>) => void>();
     return {
         handlers,
         on: ((event, handler) => {
-            handlers.set(event as string, handler as (...args: unknown[]) => void);
+            handlers.set(event as string, handler as (...args: Array<unknown>) => void);
             return "event-ref";
         }) as VaultEventSource['on'],
     };
@@ -130,5 +140,70 @@ describe("DefaultSemanticService", () => {
         }
 
         expect(idx.has("a.md")).toBe(false);
+    });
+});
+
+describe("SemanticService prefixes", () => {
+    it("score() prepends query: prefix for GTE-small model", async () => {
+        const reader = makeReader([
+            { path: "a.md", content: "some text" },
+        ]);
+        const engine = new RecordingEngine(4);
+        const svc = new DefaultSemanticService(
+            reader,
+            makeEvents(),
+            engine,
+            new EmbeddingIndex(new InMemoryAdapter()),
+            () => {},
+            () => {},
+        );
+        await svc.init("Xenova/gte-small");
+        await svc.score("test query");
+        const lastCall = engine.calls[engine.calls.length - 1];
+        expect(lastCall).toBe("query: test query");
+    });
+
+    it("warmup indexes documents with passage: prefix for GTE-small", async () => {
+        const reader = makeReader([
+            { path: "a.md", content: "doc alpha" },
+            { path: "b.md", content: "doc beta" },
+        ]);
+        const engine = new RecordingEngine(4);
+        const svc = new DefaultSemanticService(
+            reader,
+            makeEvents(),
+            engine,
+            new EmbeddingIndex(new InMemoryAdapter()),
+            () => {},
+            () => {},
+        );
+        await svc.init("Xenova/gte-small");
+        await svc.score("test");
+        const indexCalls = engine.calls.filter(
+            c => c.startsWith("passage: ")
+        );
+        expect(indexCalls).toEqual([
+            "passage: doc alpha",
+            "passage: doc beta",
+        ]);
+    });
+
+    it("score() passes text through unchanged for model without prefix", async () => {
+        const reader = makeReader([
+            { path: "a.md", content: "text" },
+        ]);
+        const engine = new RecordingEngine(4);
+        const svc = new DefaultSemanticService(
+            reader,
+            makeEvents(),
+            engine,
+            new EmbeddingIndex(new InMemoryAdapter()),
+            () => {},
+            () => {},
+        );
+        await svc.init("Xenova/all-MiniLM-L12-v2");
+        await svc.score("plain query");
+        const lastCall = engine.calls[engine.calls.length - 1];
+        expect(lastCall).toBe("plain query");
     });
 });

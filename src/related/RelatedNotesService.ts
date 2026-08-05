@@ -22,7 +22,7 @@ export class RelatedNotesService {
         private readonly app: App,
         private readonly getSettings: () => SquireSettings,
         private readonly buildNoteDoc: (app: App, file: TFile) => Promise<NoteDoc>,
-        private readonly collectCandidates: (app: App, exclude?: TFile) => Promise<NoteDoc[]>,
+        private readonly collectCandidates: (app: App, exclude?: TFile) => Promise<Array<NoteDoc>>,
         private semanticService: SemanticService = new NullSemanticService(),
         algorithmLabel = "TF-IDF"
     ) {
@@ -38,7 +38,7 @@ export class RelatedNotesService {
         return { words: s.weightWords, tags: s.weightTags, links: s.weightLinks };
     }
 
-    async findRelated(file: TFile): Promise<RelatedResult[]> {
+    async findRelated(file: TFile): Promise<Array<RelatedResult>> {
         const settings = this.getSettings();
         const weights = this.weights();
 
@@ -56,7 +56,7 @@ export class RelatedNotesService {
             semanticScores = await this.semanticService.score(text);
         }
 
-        const results: RelatedResult[] = [];
+        const results: Array<RelatedResult> = [];
 
         for (const candidate of candidates) {
             if (candidate.path === target.path) continue;

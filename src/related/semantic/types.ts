@@ -1,4 +1,4 @@
-export type EmbeddingVector = number[];
+export type EmbeddingVector = Array<number>;
 
 export interface EmbeddingEngine {
     computeEmbedding(text: string): Promise<EmbeddingVector>;

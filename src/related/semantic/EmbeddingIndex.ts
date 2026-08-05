@@ -15,7 +15,7 @@ export interface IndexEntry {
 
 export interface IndexData {
     modelId: string;
-    entries: IndexEntry[];
+    entries: Array<IndexEntry>;
 }
 
 export class EmbeddingIndex {
@@ -35,7 +35,7 @@ export class EmbeddingIndex {
         return this.data.size;
     }
 
-    get paths(): string[] {
+    get paths(): Array<string> {
         return [...this.data.keys()];
     }
 

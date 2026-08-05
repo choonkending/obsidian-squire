@@ -49,7 +49,7 @@ export class DiskCache {
     }
   }
 
-  async clearStale(activeModelIds: string[]): Promise<number> {
+  async clearStale(activeModelIds: Array<string>): Promise<number> {
     try {
       const entries = await this.adapter.list(this.getCacheDir());
       const sanitized = activeModelIds.map(id => this.sanitizeKey(id));

@@ -30,7 +30,7 @@ export class WorkerEmbeddingEngine implements EmbeddingEngine {
   private resolveReady!: () => void;
   private rejectReady!: (err: Error) => void;
   private pending = new Map<string, PendingCall>();
-  private batch: BatchItem[] = [];
+  private batch: Array<BatchItem> = [];
   private flushTimer: ReturnType<Window['setTimeout']> | null = null;
   private terminated = false;
 

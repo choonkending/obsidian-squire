@@ -132,6 +132,28 @@ describe("LexicalEngine", () => {
             expect(results.map(r => r.title)).toEqual(["Apple", "Zebra"]);
         });
 
+        it("ranks rare-term match above common-term match with IDF", () => {
+            const engine = new LexicalEngine();
+            const target = makeDoc("target.md", {
+                tokens: termFrequencies(["neural", "learning"]),
+            });
+            const candidates = [
+                makeDoc("common.md", {
+                    tokens: termFrequencies(["learning"]),
+                }),
+                makeDoc("rare.md", {
+                    tokens: termFrequencies(["neural"]),
+                }),
+                makeDoc("noise.md", {
+                    tokens: termFrequencies(["learning", "other"]),
+                }),
+            ];
+            const results = engine.rank(
+                target, candidates, 5, { words: 1, tags: 0, links: 0 }
+            );
+            expect(results[0].path).toBe("rare.md");
+        });
+
         it("combines signals via weighted sum", () => {
             const engine = new LexicalEngine();
             const target = makeDoc("target.md", {
@@ -155,12 +177,12 @@ describe("LexicalEngine", () => {
         });
     });
 
-    describe("score", () => {
-        it("returns 0 when all weights are zero", () => {
+    describe("ranking score guarantees", () => {
+        it("excludes candidates when all weights are zero", () => {
             const engine = new LexicalEngine();
             const a = makeDoc("a.md", { tokens: termFrequencies(["x"]) });
             const b = makeDoc("b.md", { tokens: termFrequencies(["x"]) });
-            expect(engine.score(a, b, { words: 0, tags: 0, links: 0 })).toBe(0);
+            expect(engine.rank(a, [b], 5, { words: 0, tags: 0, links: 0 })).toEqual([]);
         });
 
         it("returns a normalized score in [0, 1]", () => {
@@ -175,7 +197,7 @@ describe("LexicalEngine", () => {
                 tags: new Set(["t"]),
                 links: new Set(["l"]),
             });
-            const score = engine.score(a, b);
+            const score = engine.rank(a, [b], 5)[0].score;
             expect(score).toBeGreaterThan(0);
             expect(score).toBeLessThanOrEqual(1);
         });

@@ -5,7 +5,7 @@ import { buildNoteDoc } from "./buildNoteDoc";
 export async function collectCandidates(
     app: App,
     exclude?: TFile
-): Promise<NoteDoc[]> {
+): Promise<Array<NoteDoc>> {
     const files = app.vault
         .getMarkdownFiles()
         .filter(file => file.path !== exclude?.path);

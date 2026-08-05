@@ -10,7 +10,7 @@ export const workerUrl = "";
 const BACKEND_DEVICE = "wasm";
 
 type PipelineFn = (
-  texts: string | string[],
+  texts: string | Array<string>,
   options?: { pooling?: string; normalize?: boolean }
 ) => Promise<{ data: Float32Array }>;
 
@@ -101,7 +101,7 @@ async function handleComputeBatch(msg: ComputeBatchMessage): Promise<void> {
     const texts = msg.items.map((i) => i.text);
     const result = await extractor(texts, { pooling: "mean", normalize: true });
     const dim = result.data.length / texts.length;
-    const buffers: ArrayBuffer[] = [];
+    const buffers: Array<ArrayBuffer> = [];
     const results = msg.items.map((item, i) => {
       const slice = result.data.slice(i * dim, (i + 1) * dim);
       buffers.push(slice.buffer);

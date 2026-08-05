@@ -9,7 +9,7 @@ export default class NestLastNumberTransformer implements TitleTransformer {
         this.indexSeparator = indexSeparator;
     }
 
-    transform = (title: string, siblingPrefixes: string[]): TransformResult  => {
+    transform = (title: string, siblingPrefixes: Array<string>): TransformResult  => {
         const prefix = extractPrefix(title, this.indexSeparator);
         if (prefix === null || !isNumericPrefix(prefix)) {
             return { status: 'FAILURE', reason: 'Invalid title format' };

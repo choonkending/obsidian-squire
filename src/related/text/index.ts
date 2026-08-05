@@ -3,3 +3,4 @@ export { tokenize } from "./tokenize";
 export { termFrequencies } from "./termFrequency";
 export { cosineSimilaritySparse, cosineSimilarityDense } from "./cosineSimilarity";
 export { jaccardSimilarity } from "./jaccardSimilarity";
+export { computeInverseDocumentFrequencies, applyInverseDocumentFrequency } from "./inverseDocumentFrequency";
