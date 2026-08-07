@@ -29,3 +29,6 @@ ort-wasm-simd-threaded*
 
 # Embedding index (generated at runtime)
 squire-embedding-index.json
+
+# Obsidian folders
+.obsidian/

@@ -1,0 +1,18 @@
+{
+  "queries": {
+    "1 - Neuroscience MOC.md": [
+      "1.1 - Experimental ablation was the name given to the procedure of removing a portion of the brain.md"
+    ],
+    "1.1 - Experimental ablation was the name given to the procedure of removing a portion of the brain.md": [
+      "1 - Neuroscience MOC.md",
+      "2.1 - Ablation is systematically removing model components to measure their individual contribution to performance.md"
+    ],
+    "2 - Machine Learning MOC.md": [
+      "2.1 - Ablation is systematically removing model components to measure their individual contribution to performance.md"
+    ],
+    "2.1 - Ablation is systematically removing model components to measure their individual contribution to performance.md": [
+      "2 - Machine Learning MOC.md",
+      "1.1 - Experimental ablation was the name given to the procedure of removing a portion of the brain.md"
+    ]
+  }
+}

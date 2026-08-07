@@ -41,7 +41,19 @@ export default defineConfig([
     }
   },
   {
-    files: ['**/*.spec.ts'],
+    files: ["evaluation/**/*.ts"],
+    languageOptions: {
+      parser: tsparser,
+      parserOptions: { project: "./tsconfig.json" },
+      globals: { process: 'readonly', console: 'readonly' },
+    },
+    rules: {
+      'import/no-nodejs-modules': 'off',
+      'no-console': 'off',
+    },
+  },
+  {
+    files: ['**/*.{spec,test}.ts'],
     plugins: { jest: pluginJest },
     languageOptions: {
       parser: tsparser,
