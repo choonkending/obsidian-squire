@@ -1,21 +1,14 @@
 import { App, TFile } from "obsidian";
 import type { SquireSettings } from "../types";
-import LexicalEngine from "./LexicalEngine";
 import type { NoteDoc } from "./types";
 import type { RelatedResult, RelatedWeights } from "./types";
 import type { SemanticService } from "./semantic";
 import { NullSemanticService } from "./semantic";
+import { rankRelatedNotes } from "./ranking";
 
-export function combineScores(
-    lexical: number,
-    semantic: number | undefined
-): number {
-    if (semantic === undefined) return lexical;
-    return (lexical + semantic) / 2;
-}
+export { combineScores } from "./ranking";
 
 export class RelatedNotesService {
-    private readonly engine = new LexicalEngine();
     algorithmLabel: string;
 
     constructor(
@@ -40,42 +33,19 @@ export class RelatedNotesService {
 
     async findRelated(file: TFile): Promise<Array<RelatedResult>> {
         const settings = this.getSettings();
-        const weights = this.weights();
 
-        const target = await this.buildNoteDoc(this.app, file);
-        const candidates = await this.collectCandidates(this.app, file);
-
-        const ranked = this.engine.rank(target, candidates, candidates.length, weights);
-        const lexicalScores = new Map<string, number>(
-            ranked.map(r => [r.path, r.score])
-        );
-
-        let semanticScores: Map<string, number> | null = null;
+        let semanticScores: Map<string, number> | undefined;
         if (settings.semanticModelId) {
             const text = await this.app.vault.cachedRead(file);
-            semanticScores = await this.semanticService.score(text);
+            semanticScores = await this.semanticService.score(text) ?? undefined;
         }
 
-        const results: Array<RelatedResult> = [];
-
-        for (const candidate of candidates) {
-            if (candidate.path === target.path) continue;
-            const lexical = lexicalScores.get(candidate.path) ?? 0;
-            const semantic = semanticScores?.get(candidate.path);
-            const combined = combineScores(lexical, semantic);
-            if (combined > 0) {
-                results.push({
-                    path: candidate.path,
-                    title: candidate.title,
-                    score: combined,
-                });
-            }
-        }
-
-        results.sort(
-            (a, b) => b.score - a.score || a.title.localeCompare(b.title) || a.path.localeCompare(b.path)
-        );
-
-        return results.slice(0, settings.relatedNotesLimit);
+        return rankRelatedNotes({
+            target: await this.buildNoteDoc(this.app, file),
+            candidates: await this.collectCandidates(this.app, file),
+            weights: this.weights(),
+            limit: settings.relatedNotesLimit,
+            semanticScores,
+        });
     }
 }
