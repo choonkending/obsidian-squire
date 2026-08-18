@@ -1,3 +1,5 @@
+
+
 # Obsidian Squire 🛡️
 
 [![Release Obsidian plugin](https://github.com/choonkending/obsidian-squire/actions/workflows/release.yml/badge.svg)](https://github.com/choonkending/obsidian-squire/actions/workflows/release.yml) ![GitHub Release](https://img.shields.io/github/v/release/choonkending/obsidian-squire)
@@ -36,7 +38,7 @@ When a model is active, Squire combines TF‑IDF and dense-embedding cosine simi
 
 *No mental arithmetic. No manual formatting. Just pick the command and type your subject.*
 
-Right-click a note in the File Explorer and select **Duplicate: Increment Last Number** or **Duplicate: Nest Last Number**, or open the Command Palette (`Ctrl/Cmd+P`) and run the same commands. The new note appears in the same folder with the correctly computed prefix.
+Right-click a note in the File Explorer and select **Duplicate: Increment Last Number** or **Duplicate: Nest Last Number**, or open the Command Palette (`Ctrl/Cmd+P`) and run **Squire: Increment Last Number** or **Squire: Nest Last Number**. The new note appears in the same folder with the correctly computed prefix.
 
 The **Index separator** setting defines the character between your index number and title (default `-`).
 
